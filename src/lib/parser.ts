@@ -1,31 +1,22 @@
-import { Document as HTMLDocument } from "jsr:@b-fuze/deno-dom";
-import { Document as KDLDocument, Node as KDLNode, parse as parseKDL } from "npm:kdljs";
+import { Document, Node, parse, query, QueryString } from "npm:kdljs";
 
-export class DuneParser {
-	private document = new HTMLDocument();
-	private kdl: KDLDocument;
+export class Parser {
+	private document: Document;
 
 	constructor(content: string) {
-		const { output, errors } = parseKDL(content);
-		if (errors.length !== 0) throw new Error("KDL parsing failed", ...errors);
+		const { output, errors } = parse(content);
+		if (errors.length !== 0) throw new Error(["KDL parsing failed:", ...errors].join("\n"));
 
-		this.kdl = output!;
-		Object.defineProperty(
-			this.document,
-			"documentElement",
-			{ value: this.convertNodeToElement(this.kdl![0]) },
-		);
+		this.document = output!;
 	}
 
-	private convertNodeToElement(node: KDLNode) {
-		const element = this.document.createElement(node.name);
+	query = (string: QueryString): Node[] => query(this.document, string);
+	querySingle(string: QueryString): Node | undefined {
+		const result = this.query(string);
+		if (result.length > 1) throw new Error(`Expected single instance for query "${string}"`);
 
-		element.textContent = node.values.map(String).join("\n");
-		Object.entries(node.properties).forEach(([k, v]) => element.setAttribute(k, v));
-		node.children.forEach((c) => element.appendChild(this.convertNodeToElement(c)));
-
-		return element;
+		return result[0];
 	}
 
-	toHTML = () => this.document.documentElement!.outerHTML;
+	static for = async (path: string) => new Parser(new TextDecoder("utf-8").decode(await Deno.readFile(path)));
 }

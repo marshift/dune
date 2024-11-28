@@ -1,10 +1,11 @@
 import { createContext } from "npm:@marshift/argus";
-import { DuneParser } from "./lib/parser.ts";
+import { Converter } from "./lib/converter.ts";
+import { Parser } from "./lib/parser.ts";
 
 const ctx = createContext(Deno.args);
 const path = await Deno.realPath(ctx.consumePositionalArg(true));
 
-const content = new TextDecoder("utf-8").decode(await Deno.readFile(path));
-const parser = new DuneParser(content);
+const parser = await Parser.for(path);
+const converter = new Converter(parser);
 
-console.log(parser.toHTML());
+console.log(converter.toHTML());
