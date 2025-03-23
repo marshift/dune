@@ -1,0 +1,94 @@
+/*
+example file structure:
+main.ts				# deno run -A main.ts (generates a `dist` folder)
+components/ 		# holds components
+	component.kdl
+pages/
+	index.kdl
+	index.ts		# optional for special properties to pass to `page` (see below)
+	subpage.kdl
+*/
+
+// `import <path: string>` loads another file, you can use components defined there
+// imports are constrained to the local file, so importing A -> B -> C doesn't let you use C from A
+import "./components/component.kdl"
+
+// `component <name: string> <body>` defines a reusable component
+// components take props which can be used inside of the body
+component "greeting" {
+	// `text <string>` for raw text
+	// supports templating via `${<expr>}`
+	// expressions support a subset of JavaScript syntax
+	text ":3"
+
+	// use html elements by specifying their name
+	// passed values are shorthand for `text`
+	p "Hello, ${user}!"
+
+	// `element <expression> <body>` if you need something dynamic
+	element "bold ? \"b\" : \"p\"" {
+		text "Text is bold? ${bold}"
+	}
+
+	// `if/elif/else <expression> <body>` perform conditionals
+	// `elif/else` only work when the nodes are next to each other in the tree
+	if "user === \"marsh\"" {
+		p "The bouny ( :rabbit2: )"
+	}
+	elif "user === \"Jules\"" {
+		p "cgat Needd Th Waber :crying_cat_face:"
+	}
+	else {
+		p "Who the hell are you?"
+	}
+}
+
+component "greetings" {
+	// `use <name: string>` uses a reusable component
+	// pass props to components with KDL properties
+	// components can be nested inside other components
+	use "greeting" user="Jules" bold=#false
+	use "greeting" user="marsh" bold=#true
+}
+
+component "content" {
+	// `slot <name: string>` serves as a slot for other content
+	header {
+		slot "header"
+	}
+
+	main {
+		slot "content"
+	}
+
+	footer {
+		slot "footer"
+	}
+}
+
+// `page <body>` is the entrypoint of the page, it acts like a component
+// TypeScript code can pass props to this
+page {
+	body {
+		use "content" {
+			// `insert <name: string> <body>` inserts content into a slot
+			insert "header" {
+				h1 "Jules' Cool Page"
+			}
+
+			insert "content" {
+				use "greetings"
+			}
+
+			insert "footer" {
+				p "copyright cool people 2024"
+
+				// `each <expression> <variable: string> <body>` iterates over an array
+				// e.g. imagine a passed `{ links: { href: string; text: string; }[] }`
+				each "links" "link" {
+					a href="${link.href}" "${link.text}"
+				}
+			}
+		}
+	}
+}
