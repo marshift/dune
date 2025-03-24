@@ -8,4 +8,4 @@ const path = await Deno.realPath(ctx.consumePositionalArg(true));
 const parser = await Parser.for(path);
 const converter = new Converter(parser);
 
-console.log(converter.toHTML());
+console.log(converter.output);

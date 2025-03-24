@@ -1,34 +1,31 @@
-import { Document as DOM } from "jsr:@b-fuze/deno-dom";
 import { Node } from "npm:kdljs";
+import html from "./html.ts";
 import { Parser } from "./parser.ts";
 
 export class Converter {
-	private dom = new DOM();
 	private parser: Parser;
+	public output = "";
 
 	constructor(parser: Parser) {
 		this.parser = parser;
 
-		const root = this.parser.querySingle("html");
+		const root = this.parser.querySingle("page");
 		if (!root) throw new Error("Missing page root");
 
-		// HACK: Initialise documentElement ourselves
-		Object.defineProperty(
-			this.dom,
-			"documentElement",
-			{ value: this.convert(root) },
-		);
+		this.walk(root.children, root);
 	}
 
-	private convert(node: Node) {
-		const element = this.dom.createElement(node.name);
+	private walk = (nodes: Node[], parent?: Node) => nodes.forEach((child) => this.visit(child, parent));
+	private visit(node: Node, parent?: Node) {
+		switch (node.name) {
+			default: {
+				this.output += html.open(node.name, node.properties);
+				this.output += node.values.map(String).join("\n");
+				this.walk(node.children, node);
+				this.output += html.close(node.name);
 
-		element.textContent = node.values.map(String).join("\n");
-		Object.entries(node.properties).forEach(([k, v]) => element.setAttribute(k, v));
-		node.children.forEach((c) => element.appendChild(this.convert(c)));
-
-		return element;
+				break;
+			}
+		}
 	}
-
-	toHTML = () => this.dom.documentElement!.outerHTML;
 }
