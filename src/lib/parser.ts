@@ -10,10 +10,10 @@ export class Parser {
 		this.document = output!;
 	}
 
-	query = (string: QueryString): Node[] => query(this.document, string);
-	querySingle(string: QueryString): Node | undefined {
-		const result = this.query(string);
-		if (result.length > 1) throw new Error(`Expected single instance for query "${string}"`);
+	query = (str: QueryString): Node[] => query(this.document, str);
+	querySingle(str: QueryString): Node | undefined {
+		const result = this.query(str);
+		if (result.length > 1) throw new Error(`Expected single instance for query "${str}"`);
 
 		return result[0];
 	}
