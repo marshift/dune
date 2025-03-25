@@ -1,0 +1,25 @@
+component "say" {
+	p "You said: \"${word}\""
+}
+
+component "nesting-demo" {
+	use "say" word="nested"
+	p "...That's what components can be!"
+}
+
+component "slot-demo" {
+	p "There's room for content below me."
+	slot "content"
+}
+
+page {
+	body {
+		use "say" word="woah"
+		use "nesting-demo"
+		use "slot-demo" {
+			insert "content" {
+				p "Hi, I'm that content!"
+			}
+		}
+	}
+}

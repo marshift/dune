@@ -11,14 +11,19 @@ function assertValueSize(node: Node, expected: number) {
 	}
 }
 
+interface VisitorOptions {
+	ctx?: Context;
+	insertions?: Map<string, Node[]>;
+}
+
 export class Converter {
 	private parser: Parser;
-	private ctx: Context;
+	private globals: Context;
 	public output = "";
 
-	constructor(parser: Parser, ctx: Context) {
+	constructor(parser: Parser, globals: Context = {}) {
 		this.parser = parser;
-		this.ctx = ctx;
+		this.globals = globals;
 
 		const root = this.parser.querySingle("page");
 		if (!root) throw new Error("Missing page root");
@@ -26,35 +31,70 @@ export class Converter {
 		this.walk(root.children, root);
 	}
 
-	private walk = (nodes: Node[], parent?: Node) => nodes.forEach((child) => this.visit(child, parent));
-	private visit(node: Node, parent?: Node) {
-		const values = node.values.map(String);
-		const properties = Object.fromEntries(
+	private walk = (nodes: Node[], parent: Node, options?: VisitorOptions) =>
+		nodes.forEach((child) => this.visit(child, parent, options));
+
+	private visit(node: Node, parent: Node, options: VisitorOptions = {}) {
+		// Inject globals into passed context
+		options.ctx = { ...this.globals, ...options.ctx };
+
+		// For convenience, cast values and props to strings
+		const stringValues = node.values.map(String);
+		const templatedProps = Object.fromEntries(
 			Object.entries(node.properties).map(([k, v]) => [
 				k,
-				template(String(v), this.ctx),
+				template(String(v), options.ctx!),
 			]),
 		);
 
 		switch (node.name) {
+			// Components
+			case "use": {
+				assertValueSize(node, 1);
+				const name = stringValues[0];
+				const component = this.parser.querySingle(`component[val() = ${name}]`);
+				if (!component) throw new Error(`Unknown component \"${name}\"`);
+
+				const insertions = new Map(
+					node.children
+						.filter((c) => c.name === "insert")
+						.map((c) => [String(c.values[0]), c.children]),
+				);
+
+				this.walk(component.children, parent, {
+					ctx: templatedProps, // Component context is isolated
+					insertions,
+				});
+				break;
+			}
+			case "slot": {
+				assertValueSize(node, 1);
+				const insertion = options.insertions?.get(stringValues[0]);
+				if (!insertion) break;
+
+				this.walk(insertion, parent, options);
+				break;
+			}
+
+			// Elements
 			case "text": {
 				assertValueSize(node, 1);
-				this.output += template(values[0], this.ctx);
+				this.output += template(stringValues[0], options.ctx);
 				break;
 			}
 			case "element": {
 				assertValueSize(node, 1);
-				const name = evaluate(values[0], this.ctx, true);
+				const name = evaluate(stringValues[0], options.ctx, true);
 
-				this.output += html.open(name, properties);
-				this.walk(node.children, node);
+				this.output += html.open(name, templatedProps);
+				this.walk(node.children, node, options);
 				this.output += html.close(name);
 				break;
 			}
 			default: {
-				this.output += html.open(node.name, properties);
-				this.output += values.map((v) => template(v, this.ctx)).join("\n");
-				this.walk(node.children, node);
+				this.output += html.open(node.name, templatedProps);
+				this.output += stringValues.map((v) => template(v, options.ctx!)).join("\n");
+				this.walk(node.children, node, options);
 				this.output += html.close(node.name);
 
 				break;

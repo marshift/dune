@@ -6,6 +6,6 @@ const ctx = createContext(Deno.args);
 const path = await Deno.realPath(ctx.consumePositionalArg(true));
 
 const parser = await Parser.for(path);
-const converter = new Converter(parser, {});
+const converter = new Converter(parser);
 
 console.log(converter.output);
