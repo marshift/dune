@@ -35,7 +35,10 @@ export class Converter {
 		const root = this.parser.querySingle("page");
 		if (!root) throw new Error("Missing page root");
 
+		this.output += html.doctype;
+		this.output += html.open("html");
 		this.walk(root.children, root);
+		this.output += html.close("html");
 	}
 
 	private walk = (nodes: Node[], parent: Node, options?: VisitorOptions) =>

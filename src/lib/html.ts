@@ -4,6 +4,7 @@
 import { Value } from "npm:kdljs";
 
 export default {
+	doctype: "<!DOCTYPE html>",
 	open: (type: string, attributes?: Record<string, Value>) =>
 		`<${type}`
 		+ (attributes ? ["", ...Object.entries(attributes).map(([k, v]) => `${k}=\"${v}\"`)].join(" ") : "")
