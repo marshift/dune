@@ -3,6 +3,13 @@ import { Context, evaluate, template } from "./expressions.js";
 import html from "./html.ts";
 import { Parser } from "./parser.ts";
 
+// https://stackoverflow.com/a/32538867
+// deno-lint-ignore no-explicit-any
+function isIterable<T>(obj: any): obj is Iterable<T> {
+	if (obj == null) return false;
+	return typeof obj[Symbol.iterator] === "function";
+}
+
 function assertValueSize(node: Node, expected: number) {
 	if (node.values.length !== expected) {
 		throw new Error(
@@ -48,6 +55,24 @@ export class Converter {
 		);
 
 		switch (node.name) {
+			// Flow
+			case "each": {
+				assertValueSize(node, 2);
+				const iterableName = stringValues[0];
+				const iterable = options.ctx[iterableName];
+				if (!isIterable(iterable)) throw new Error(`\"${iterableName}\" is not iterable`);
+
+				const itemName = stringValues[1];
+				for (const item of iterable) {
+					this.walk(node.children, parent, {
+						...options,
+						ctx: { ...options.ctx, [itemName]: item },
+					});
+				}
+
+				break;
+			}
+
 			// Components
 			case "use": {
 				assertValueSize(node, 1);
