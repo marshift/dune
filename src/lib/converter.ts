@@ -1,5 +1,5 @@
 import { Node } from "npm:kdljs";
-import { Context, evaluate, template } from "./expressions.ts";
+import { Context, evaluate, template } from "./expressions.js";
 import html from "./html.ts";
 import { Parser } from "./parser.ts";
 
