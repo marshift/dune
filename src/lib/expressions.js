@@ -22,6 +22,14 @@ function reduce(node, ctx) {
 			if (!(node.name in ctx)) throw new ReferenceError(`${node.name} is not defined`);
 			return ctx[node.name];
 		}
+		case "MemberExpression": {
+			const value = reduce(node.object, ctx);
+			const key = node.property.type === "Identifier"
+				? node.property.name
+				: reduce(node.property, ctx);
+
+			return value?.[key];
+		}
 		case "BinaryExpression": {
 			return Function("l, r", `return l ${node.operator} r`)(
 				reduce(node.left, ctx),
