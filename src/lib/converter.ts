@@ -18,9 +18,24 @@ function assertValueSize(node: Node, expected: number) {
 	}
 }
 
+function assertPreviousNodeType(node: Node, parent: Node, expected: string | RegExp) {
+	const index = parent.children.indexOf(node) - 1;
+	const prev = parent.children[index];
+	if (
+		!prev
+			|| typeof expected === "string"
+			? prev.name !== expected
+			: !expected.test(prev.name)
+	) {
+		throw new Error(
+			`Invalid \"${node.name}\" position, expected sibling of type \"${expected}\" but got \"${prev.name}\"`,
+		);
+	}
+}
+
 interface VisitorOptions {
 	ctx?: Context;
-	insertions?: Map<string, Node[]>;
+	insertions?: Map<string, Node>;
 }
 
 export class Converter {
@@ -37,12 +52,12 @@ export class Converter {
 
 		this.output += html.doctype;
 		this.output += html.open("html");
-		this.walk(root.children, root);
+		this.walk(root);
 		this.output += html.close("html");
 	}
 
-	private walk = (nodes: Node[], parent: Node, options?: VisitorOptions) =>
-		nodes.forEach((child) => this.visit(child, parent, options));
+	private walk = (node: Node, options?: VisitorOptions) =>
+		node.children.forEach((child) => this.visit(child, node, options));
 
 	private visit(node: Node, parent: Node, options: VisitorOptions = {}) {
 		// Inject globals into passed context
@@ -53,12 +68,40 @@ export class Converter {
 		const templatedProps = Object.fromEntries(
 			Object.entries(node.properties).map(([k, v]) => [
 				k,
-				template(String(v), options.ctx!),
+				typeof v === "string" ? template(String(v), options.ctx!) : v,
 			]),
 		);
 
-		switch (node.name) {
+		outer: switch (node.name) {
 			// Flow
+			// TODO: This currently evaluates the prior conditions in the tree
+			case "else": {
+				assertPreviousNodeType(node, parent, /if|elif/);
+				const thisIdx = parent.children.indexOf(node);
+				const before = parent.children.slice(0, thisIdx).reverse();
+
+				for (const sibling of before) {
+					if (!/if|elif/.test(sibling.name)) break;
+
+					const condition = String(sibling.values[0]);
+					const result = !!evaluate(condition, options.ctx);
+					if (result) break outer;
+				}
+
+				this.walk(node, options);
+				break;
+			}
+			case "elif":
+				assertPreviousNodeType(node, parent, /if|elif/);
+				/* falls through */
+			case "if": {
+				assertValueSize(node, 1);
+				const condition = stringValues[0];
+				const result = evaluate(condition, options.ctx);
+
+				if (result) this.walk(node, options);
+				break;
+			}
 			case "each": {
 				assertValueSize(node, 2);
 				const iterableName = stringValues[0];
@@ -67,7 +110,7 @@ export class Converter {
 
 				const itemName = stringValues[1];
 				for (const item of iterable) {
-					this.walk(node.children, parent, {
+					this.walk(node, {
 						...options,
 						ctx: { ...options.ctx, [itemName]: item },
 					});
@@ -86,10 +129,10 @@ export class Converter {
 				const insertions = new Map(
 					node.children
 						.filter((c) => c.name === "insert")
-						.map((c) => [String(c.values[0]), c.children]),
+						.map((c) => [String(c.values[0]), c]),
 				);
 
-				this.walk(component.children, parent, {
+				this.walk(component, {
 					ctx: templatedProps, // Component context is isolated
 					insertions,
 				});
@@ -100,7 +143,7 @@ export class Converter {
 				const insertion = options.insertions?.get(stringValues[0]);
 				if (!insertion) break;
 
-				this.walk(insertion, parent, options);
+				this.walk(insertion, options);
 				break;
 			}
 
@@ -115,14 +158,14 @@ export class Converter {
 				const name = evaluate(stringValues[0], options.ctx, true);
 
 				this.output += html.open(name, templatedProps);
-				this.walk(node.children, node, options);
+				this.walk(node, options);
 				this.output += html.close(name);
 				break;
 			}
 			default: {
 				this.output += html.open(node.name, templatedProps);
 				this.output += stringValues.map((v) => template(v, options.ctx!)).join("\n");
-				this.walk(node.children, node, options);
+				this.walk(node, options);
 				this.output += html.close(node.name);
 
 				break;
