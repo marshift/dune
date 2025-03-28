@@ -88,3 +88,25 @@ export function template(str, ctx) {
 
 	return chars.join("");
 }
+
+/**
+ * @overload
+ * @param {Record<string, Value>} props
+ * @param {Context} ctx
+ * @returns {Record<string, Value>}
+ */
+
+/**
+ * @overload
+ * @param {Record<string, Value>} props
+ * @param {Context} ctx
+ * @param {boolean} stringify
+ * @returns {Record<string, string>}
+ */
+export const remap = (props, ctx, stringify = false) =>
+	Object.fromEntries(
+		Object.entries(props).map(([k, v]) => [
+			k,
+			typeof v === "string" ? template(v, ctx) : stringify ? String(v) : v,
+		]),
+	);
