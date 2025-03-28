@@ -118,9 +118,7 @@ export class Parser {
 				const thisIdx = parent.children.indexOf(node);
 				const block = parent.children.slice(thisIdx);
 
-				outer: for (let i = 0; i < block.length; i++) {
-					const member = block[i];
-
+				outer: for (const member of block) {
 					switch (member.name) {
 						case "elif":
 						case "if": {
