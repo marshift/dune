@@ -2,32 +2,34 @@ import { DuneNode } from "../parser.ts";
 import { Adapter } from "./base.ts";
 
 export class HTMLAdapter extends Adapter {
-	private output = "<!DOCTYPE html>";
+	private doctype = "<!DOCTYPE html>";
+	private element(type: string, attributes: Record<string, string>, children: string[]) {
+		let final = `<${type}`;
 
-	private openElement = (type: string, attributes?: Record<string, string>) =>
-		this.output += `<${type}`
-			+ (attributes ? ["", ...Object.entries(attributes).map(([k, v]) => `${k}=\"${v}\"`)].join(" ") : "")
-			+ ">";
+		if (Object.keys(attributes).length !== 0) {
+			final += [
+				"",
+				...Object.entries(attributes).map(([k, v]) => `${k}=\"${v}\"`),
+			].join(" ");
+		}
+		if (children.length !== 0) {
+			final += `>${children.join("")}</${type}>`;
+		} else {
+			final += " />";
+		}
 
-	private closeElement = (type: string) => this.output += `</${type}>`;
+		return final;
+	}
 
-	private walk = (nodes: DuneNode[]) => nodes.forEach((child) => this.visit(child));
-	private visit(node: DuneNode) {
+	private walk = (nodes: DuneNode[]): string[] => nodes.map((child) => this.visit(child));
+	private visit(node: DuneNode): string {
 		switch (node.type) {
 			case "text":
-				this.output += node.content;
-				break;
+				return node.content;
 			case "element":
-				this.openElement(node.name, node.attributes);
-				this.walk(node.body);
-				this.closeElement(node.name);
+				return this.element(node.name, node.attributes, this.walk(node.body));
 		}
 	}
 
-	override process(ast: DuneNode[]) {
-		this.openElement("html");
-		this.walk(ast);
-		this.closeElement("html");
-		return this.output;
-	}
+	override process = (ast: DuneNode[]) => this.doctype + this.element("html", {}, this.walk(ast));
 }
