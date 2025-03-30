@@ -1,4 +1,4 @@
-import { Node as KDLNode, parse, query, Value } from "npm:kdljs";
+import { Node as KDLNode, parse, query, QueryString, Value } from "npm:kdljs";
 import { Adapter } from "./adapters/base.ts";
 import { Context, evaluate, remap, template } from "./expressions.js";
 
@@ -34,21 +34,20 @@ interface DuneTextNode {
 export type DuneNode = DuneElementNode | DuneTextNode;
 
 export class Parser {
-	private globals: Context = {}; // TODO: Source from companion JS file
-	private document: KDLNode[];
-	ast: DuneNode[];
-	result: string;
+	readonly document: KDLNode[];
+	readonly root?: KDLNode;
+	readonly components: Map<string, KDLNode>;
+	globals: Context = {};
 
-	constructor(content: string, adapter: Adapter) {
+	constructor(content: string, ctx: Context) {
+		this.globals = { ...this.globals, ...ctx };
+
 		const { output, errors } = parse(content);
 		if (errors.length !== 0) throw new Error(["KDL parsing failed:", ...errors].join("\n"));
+
 		this.document = output!;
-
-		const root = this.querySingle(this.document, "page");
-		if (!root) throw new Error("Missing page root");
-		this.ast = this.walk(root);
-
-		this.result = adapter.process(this.ast);
+		this.root = this.query(this.document, "page", true);
+		this.components = this.extract(this.document, "component");
 	}
 
 	private assertValueSize(node: KDLNode, expected: number) {
@@ -87,17 +86,28 @@ export class Parser {
 		}
 	}
 
-	private query: (...args: Parameters<typeof query>) => KDLNode[] = query;
-	private querySingle = (...args: Parameters<typeof this.query>) => {
-		const result = this.query(...args);
-		if (result.length > 1) throw new Error(`Expected single instance for query "${args[1]}"`);
-
-		return result[0];
-	};
+	private query(document: KDLNode[], str: QueryString): KDLNode[];
+	private query(document: KDLNode[], str: QueryString, single: boolean): KDLNode;
+	private query(document: KDLNode[], str: QueryString, single = false) {
+		const result: KDLNode[] = query(document, str);
+		if (single) {
+			if (result.length > 1) throw new Error(`Expected single instance for query "${str}"`);
+			return result[0];
+		} else {
+			return result;
+		}
+	}
+	private extract = (document: KDLNode[], str: QueryString) =>
+		new Map(
+			this.query(document, str)
+				.map((child) => {
+					this.assertStringValue(child.values[0]);
+					return [child.values[0], child];
+				}),
+		);
 
 	private walk = (node: KDLNode, options?: KDLNodeVisitorOptions): DuneNode[] =>
 		node.children.flatMap((child) => this.visit(child, node, options)).filter((node) => !!node);
-
 	private visit(
 		node: KDLNode,
 		parent: KDLNode,
@@ -168,20 +178,12 @@ export class Parser {
 				this.assertValueSize(node, 1);
 				this.assertStringValue(node.values[0]);
 
-				const component = this.querySingle(this.document, `component[val() = ${node.values[0]}]`);
+				const component = this.components.get(node.values[0]);
 				if (!component) throw new Error(`Unknown component \"${node.values[0]}\"`);
-
-				const insertions = new Map(
-					this.query(node.children, "insert")
-						.map((child) => {
-							this.assertStringValue(child.values[0]);
-							return [child.values[0], child];
-						}),
-				);
 
 				return this.walk(component, {
 					ctx: remap(node.properties, options.ctx), // Component context is isolated
-					insertions,
+					insertions: this.extract(node.children, "insert"),
 				});
 			}
 			case "slot": {
@@ -240,6 +242,12 @@ export class Parser {
 		}
 	}
 
-	static for = async (path: string, adapter: Adapter) =>
-		new Parser(new TextDecoder("utf-8").decode(await Deno.readFile(path)), adapter);
+	public convert(adapter: Adapter) {
+		if (!this.root) return null;
+
+		const ast = this.walk(this.root);
+		return adapter.process(ast);
+	}
+
+	static for = async (path: string) => new Parser(new TextDecoder("utf-8").decode(await Deno.readFile(path)), {});
 }
