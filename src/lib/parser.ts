@@ -1,3 +1,4 @@
+import * as path from "jsr:@std/path";
 import { Node as KDLNode, parse, query, QueryString, Value } from "npm:kdljs";
 import { Adapter } from "./adapters/base.ts";
 import { Context, evaluate, remap, template } from "./expressions.js";
@@ -249,5 +250,24 @@ export class Parser {
 		return adapter.process(ast);
 	}
 
-	static for = async (path: string) => new Parser(new TextDecoder("utf-8").decode(await Deno.readFile(path)), {});
+	static async for(filePath: string) {
+		const resPath = path.resolve(filePath);
+		const content = await Deno.readFile(resPath).then((r) => new TextDecoder("utf-8").decode(r));
+
+		let context: Context | undefined;
+		for (const ext of [".ts", ".js", ".mjs"]) {
+			try {
+				const companionPath = resPath.substring(0, resPath.length - path.extname(resPath).length) + ext;
+				const companion = await import("file:///" + companionPath);
+				context = companion.default;
+				break;
+			} catch (e) {
+				// deno-lint-ignore no-explicit-any
+				if ((e as any).code === "ERR_MODULE_NOT_FOUND") continue;
+				throw e;
+			}
+		}
+
+		return new Parser(content, context ?? {});
+	}
 }

@@ -4,7 +4,7 @@ import { Parser } from "./lib/parser.ts";
 
 const ctx = createContext(Deno.args);
 
-const path = await Deno.realPath(ctx.consumePositionalArg(true));
+const path = ctx.consumePositionalArg(true);
 const parser = await Parser.for(path);
 
 console.log(parser.convert(new HTMLAdapter()));
