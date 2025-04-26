@@ -1,6 +1,4 @@
-component "say" {
-	p "You said: \"${word}\""
-}
+import "./components/component.kdl" // Provides "say"
 
 component "nesting-demo" {
 	use "say" word="nested"

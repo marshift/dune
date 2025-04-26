@@ -1,0 +1,3 @@
+component "say" {
+	p "You said: \"${word}\""
+}

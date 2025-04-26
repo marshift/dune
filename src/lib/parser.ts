@@ -78,13 +78,16 @@ export class Parser {
 	readonly components: Map<string, KDLNode>;
 	globals: Context;
 
-	constructor(content: string, globals: Context = {}) {
+	constructor(content: string, globals: Context = {}, dependencies = new Map<string, Parser>()) {
 		const { output, errors } = parse(content);
 		if (errors.length !== 0) throw new Error(["KDL parsing failed:", ...errors].join("\n"));
 
 		this.document = output!;
 		this.root = this.query(this.document, "page", true);
-		this.components = this.extract(this.document, "component");
+		this.components = new Map([
+			...this.extract(this.document, "component"),
+			...dependencies.values().flatMap((i) => i.components),
+		]);
 		this.globals = globals;
 	}
 
@@ -275,6 +278,20 @@ export class Parser {
 			}
 		}
 
-		return new Parser(content, context);
+		// TODO: Making two seperate parsers for this is a bit hacky but... blegh.
+		const parser = new Parser(content, context);
+		const dependencies = new Map(
+			await Promise.all(
+				parser.query(parser.document, "import").map(async (child) => {
+					assertStringValue(child.values[0]);
+					return [
+						child.values[0],
+						await Parser.for(new URL(child.values[0], url)),
+					] as const;
+				}),
+			),
+		);
+
+		return new Parser(content, context, dependencies);
 	}
 }
