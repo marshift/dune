@@ -2,6 +2,45 @@ import { Node as KDLNode, parse, query, QueryString, Value } from "npm:kdljs";
 import { Adapter } from "./adapters/base.ts";
 import { Context, evaluate, remap, template } from "./expressions.js";
 
+function assertValueSize(node: KDLNode, expected: number) {
+	if (node.values.length !== expected) {
+		throw new Error(
+			`Incorrect number of values passed to node of type \"${node.name}\", expected ${expected} but got ${node.values.length}`,
+		);
+	}
+}
+
+function assertStringValue(value: Value): asserts value is string {
+	const type = typeof value;
+	if (type !== "string") {
+		throw new Error(
+			`Expected primitive value of type string but got ${type}`,
+		);
+	}
+}
+
+// deno-lint-ignore no-explicit-any
+function assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
+	if (obj == null || typeof obj[Symbol.iterator] !== "function") {
+		throw new Error("Expected an iterable");
+	}
+}
+
+function assertPreviousNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
+	const thisIdx = parent.children.indexOf(node) - 1;
+	const prev = parent.children[thisIdx];
+	if (
+		!prev
+			|| typeof expected === "string"
+			? prev.name !== expected
+			: !expected.test(prev.name)
+	) {
+		throw new Error(
+			`Invalid position for node of type \"${node.name}\", expected previous node to be of type \"${expected}\" but got \"${prev.name}\"`,
+		);
+	}
+}
+
 // The parser should parse all of these, even if they're conditionally used
 type ParseableKDLNodeTypes =
 	| "element"
@@ -50,42 +89,6 @@ export class Parser {
 		this.components = this.extract(this.document, "component");
 	}
 
-	private assertValueSize(node: KDLNode, expected: number) {
-		if (node.values.length !== expected) {
-			throw new Error(
-				`Incorrect number of values passed to node of type \"${node.name}\", expected ${expected} but got ${node.values.length}`,
-			);
-		}
-	}
-	private assertStringValue(value: Value): asserts value is string {
-		const type = typeof value;
-		if (type !== "string") {
-			throw new Error(
-				`Expected primitive value of type string but got ${type}`,
-			);
-		}
-	}
-	// deno-lint-ignore no-explicit-any
-	private assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
-		if (obj == null || typeof obj[Symbol.iterator] !== "function") {
-			throw new Error("Expected an iterable");
-		}
-	}
-	private assertPreviousNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
-		const thisIdx = parent.children.indexOf(node) - 1;
-		const prev = parent.children[thisIdx];
-		if (
-			!prev
-				|| typeof expected === "string"
-				? prev.name !== expected
-				: !expected.test(prev.name)
-		) {
-			throw new Error(
-				`Invalid position for node of type \"${node.name}\", expected previous node to be of type \"${expected}\" but got \"${prev.name}\"`,
-			);
-		}
-	}
-
 	private query(document: KDLNode[], str: QueryString): KDLNode[];
 	private query(document: KDLNode[], str: QueryString, single: boolean): KDLNode;
 	private query(document: KDLNode[], str: QueryString, single = false) {
@@ -101,7 +104,7 @@ export class Parser {
 		new Map(
 			this.query(document, str)
 				.map((child) => {
-					this.assertStringValue(child.values[0]);
+					assertStringValue(child.values[0]);
 					return [child.values[0], child];
 				}),
 		);
@@ -121,7 +124,7 @@ export class Parser {
 			// Flow
 			case "else":
 			case "elif": {
-				this.assertPreviousNodeType(node, parent, /if|elif/);
+				assertPreviousNodeType(node, parent, /if|elif/);
 				return;
 			}
 			case "if": {
@@ -132,8 +135,8 @@ export class Parser {
 					switch (member.name) {
 						case "elif":
 						case "if": {
-							this.assertValueSize(member, 1);
-							this.assertStringValue(member.values[0]);
+							assertValueSize(member, 1);
+							assertStringValue(member.values[0]);
 
 							const result = !!evaluate(member.values[0], options.ctx);
 							if (!result) continue outer;
@@ -151,12 +154,12 @@ export class Parser {
 				return;
 			}
 			case "each": {
-				this.assertValueSize(node, 2);
-				this.assertStringValue(node.values[0]);
-				this.assertStringValue(node.values[1]);
+				assertValueSize(node, 2);
+				assertStringValue(node.values[0]);
+				assertStringValue(node.values[1]);
 
 				const iterable = options.ctx[node.values[0]];
-				this.assertIsIterable(iterable);
+				assertIsIterable(iterable);
 
 				const iterations = [];
 				for (const item of iterable) {
@@ -171,12 +174,12 @@ export class Parser {
 
 			// Components
 			case "insert": {
-				this.assertPreviousNodeType(node, parent, "use");
+				assertPreviousNodeType(node, parent, "use");
 				return;
 			}
 			case "use": {
-				this.assertValueSize(node, 1);
-				this.assertStringValue(node.values[0]);
+				assertValueSize(node, 1);
+				assertStringValue(node.values[0]);
 
 				const component = this.components.get(node.values[0]);
 				if (!component) throw new Error(`Unknown component \"${node.values[0]}\"`);
@@ -187,8 +190,8 @@ export class Parser {
 				});
 			}
 			case "slot": {
-				this.assertValueSize(node, 1);
-				this.assertStringValue(node.values[0]);
+				assertValueSize(node, 1);
+				assertStringValue(node.values[0]);
 
 				const insertion = options.insertions?.get(node.values[0]);
 				if (!insertion) return;
@@ -198,8 +201,8 @@ export class Parser {
 
 			// Elements
 			case "text": {
-				this.assertValueSize(node, 1);
-				this.assertStringValue(node.values[0]);
+				assertValueSize(node, 1);
+				assertStringValue(node.values[0]);
 
 				return {
 					type: "text",
@@ -207,8 +210,8 @@ export class Parser {
 				};
 			}
 			case "element": {
-				this.assertValueSize(node, 1);
-				this.assertStringValue(node.values[0]);
+				assertValueSize(node, 1);
+				assertStringValue(node.values[0]);
 
 				const name = evaluate(node.values[0], options.ctx, true);
 				const attributes = remap(node.properties, options.ctx, true);
@@ -229,7 +232,7 @@ export class Parser {
 					attributes,
 					body: [
 						...node.values.map((value) => {
-							this.assertStringValue(value);
+							assertStringValue(value);
 							return {
 								type: "text" as const,
 								content: template(value, options.ctx!),
