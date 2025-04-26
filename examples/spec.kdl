@@ -10,7 +10,8 @@ pages/
 */
 
 // `import <path: string>` loads another file, you can use components defined there
-// imports are constrained to the local file, so importing A -> B -> C doesn't let you use C from A
+// imports are constrained to the current file, so importing A -> B -> C doesn't let you use C from A
+// remote file imports are also supported via URLs, e.g. `http://` or `file://`
 import "./components/component.kdl"
 
 // `component <name: string> <body>` defines a reusable component
