@@ -5,6 +5,6 @@ import { Parser } from "./lib/parser.ts";
 const ctx = createContext(Deno.args);
 
 const path = ctx.consumePositionalArg(true);
-const parser = await Parser.for(path);
+const parser = await Parser.for(new URL(path, `file:///${Deno.cwd()}/`));
 
 console.log(parser.convert(new HTMLAdapter()));

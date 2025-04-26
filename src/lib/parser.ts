@@ -1,4 +1,3 @@
-import * as path from "jsr:@std/path";
 import { Node as KDLNode, parse, query, QueryString, Value } from "npm:kdljs";
 import { Adapter } from "./adapters/base.ts";
 import { Context, evaluate, remap, template } from "./expressions.js";
@@ -250,15 +249,21 @@ export class Parser {
 		return adapter.process(ast);
 	}
 
-	static async for(filePath: string) {
-		const resPath = path.resolve(filePath);
-		const content = await Deno.readFile(resPath).then((r) => new TextDecoder("utf-8").decode(r));
+	static async for(url: URL): Promise<Parser> {
+		if (!url.pathname.endsWith(".kdl")) throw new Error("Expected a KDL (\".kdl\") file");
+
+		const content = await fetch(url)
+			.then((m) => m.text())
+			.catch((e: Error) => {
+				throw new Error(`Failed to fetch KDL file at "${url}": ${e.message}`);
+			});
 
 		let context: Context | undefined;
+
 		for (const ext of [".ts", ".js", ".mjs"]) {
 			try {
-				const companionPath = resPath.substring(0, resPath.length - path.extname(resPath).length) + ext;
-				const companion = await import("file:///" + companionPath);
+				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
+				const companion = await import(companionUrl.href);
 				context = companion.default;
 				break;
 			} catch (e) {
