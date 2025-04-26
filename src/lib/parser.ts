@@ -76,17 +76,16 @@ export class Parser {
 	readonly document: KDLNode[];
 	readonly root?: KDLNode;
 	readonly components: Map<string, KDLNode>;
-	globals: Context = {};
+	globals: Context;
 
-	constructor(content: string, ctx: Context) {
-		this.globals = { ...this.globals, ...ctx };
-
+	constructor(content: string, globals: Context = {}) {
 		const { output, errors } = parse(content);
 		if (errors.length !== 0) throw new Error(["KDL parsing failed:", ...errors].join("\n"));
 
 		this.document = output!;
 		this.root = this.query(this.document, "page", true);
 		this.components = this.extract(this.document, "component");
+		this.globals = globals;
 	}
 
 	private query(document: KDLNode[], str: QueryString): KDLNode[];
@@ -276,6 +275,6 @@ export class Parser {
 			}
 		}
 
-		return new Parser(content, context ?? {});
+		return new Parser(content, context);
 	}
 }
