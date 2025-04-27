@@ -1,4 +1,4 @@
-import { DuneNode } from "../parser.ts";
+import type { DuneNode } from "../parser.ts";
 import { Adapter } from "./base.ts";
 
 export class JSONAdapter extends Adapter {

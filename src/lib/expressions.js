@@ -1,15 +1,15 @@
 // Inspired by https://github.com/P0lip/simple-eval/blob/75aa4e24c5bbf97ae68f7722b87cd8a035c541b8/src/reduce.mjs, MIT licensed
 // Written in JS with JSDoc because I was fighting jsep's typedefs constantly
 
-import jsep from "npm:jsep";
+import jsep from "jsep";
 
-/** @typedef {import("npm:kdljs").Value} Value */
+/** @typedef {import("kdljs").Value} Value */
 /** @typedef {Record<PropertyKey, Value>} ValueRecord */
 /** @typedef {(Value | ValueRecord | Iterable<Value | ValueRecord>)} Data */
 /** @typedef {Record<string, Data>} Context */
 
 /**
- * @param {import("npm:jsep").CoreExpression} node
+ * @param {import("jsep").CoreExpression} node
  * @param {Context} ctx
  * @returns {Data}
  */

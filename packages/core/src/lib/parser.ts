@@ -1,4 +1,4 @@
-import { fetch, importModule } from "#lib/remote";
+import fetch from "#lib/fetch";
 import { type Node as KDLNode, parse, query, type QueryString, type Value } from "kdljs";
 import { Adapter } from "./adapters/base.ts";
 import { type Context, evaluate, remap, template } from "./expressions.js";
@@ -269,12 +269,10 @@ export class Parser {
 		for (const ext of [".ts", ".js", ".mjs"]) {
 			try {
 				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
-				const companion = await importModule(companionUrl.href);
+				const companion = await import(companionUrl.href);
 				context = companion.default;
 				break;
-			} catch {
-				continue;
-			}
+			} catch { /* We don't care if this fails or succeeds */ }
 		}
 
 		// TODO: Making two seperate parsers for this is a bit hacky but... blegh.

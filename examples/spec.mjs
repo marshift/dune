@@ -1,8 +1,3 @@
-interface Link {
-	href: string;
-	text: string;
-}
-
 export default {
 	links: [
 		{
@@ -13,5 +8,5 @@ export default {
 			href: "https://marsh.zone/",
 			text: "marsh's website",
 		},
-	] satisfies Link[],
+	],
 };

@@ -1,0 +1,80 @@
+{
+  "version": "4",
+  "specifiers": {
+    "npm:@marshift/argus@^1.2.1": "1.2.1",
+    "npm:@types/node@^22.15.2": "22.15.2",
+    "npm:jsep@^1.4.0": "1.4.0",
+    "npm:kdljs@0.3": "0.3.0"
+  },
+  "npm": {
+    "@chevrotain/cst-dts-gen@11.0.3": {
+      "integrity": "sha512-BvIKpRLeS/8UbfxXxgC33xOumsacaeCKAjAeLyOn7Pcp95HiRbrpl14S+9vaZLolnbssPIUuiUd8IvgkRyt6NQ==",
+      "dependencies": [
+        "@chevrotain/gast",
+        "@chevrotain/types",
+        "lodash-es"
+      ]
+    },
+    "@chevrotain/gast@11.0.3": {
+      "integrity": "sha512-+qNfcoNk70PyS/uxmj3li5NiECO+2YKZZQMbmjTqRI3Qchu8Hig/Q9vgkHpI3alNjr7M+a2St5pw5w5F6NL5/Q==",
+      "dependencies": [
+        "@chevrotain/types",
+        "lodash-es"
+      ]
+    },
+    "@chevrotain/regexp-to-ast@11.0.3": {
+      "integrity": "sha512-1fMHaBZxLFvWI067AVbGJav1eRY7N8DDvYCTwGBiE/ytKBgP8azTdgyrKyWZ9Mfh09eHWb5PgTSO8wi7U824RA=="
+    },
+    "@chevrotain/types@11.0.3": {
+      "integrity": "sha512-gsiM3G8b58kZC2HaWR50gu6Y1440cHiJ+i3JUvcp/35JchYejb2+5MVeJK0iKThYpAa/P2PYFV4hoi44HD+aHQ=="
+    },
+    "@chevrotain/utils@11.0.3": {
+      "integrity": "sha512-YslZMgtJUyuMbZ+aKvfF3x1f5liK4mWNxghFRv7jqRR9C3R3fAOGTTKvxXDa2Y1s9zSbcpuO0cAxDYsc9SrXoQ=="
+    },
+    "@marshift/argus@1.2.1": {
+      "integrity": "sha512-FgLb8C8P5KvKwIE6kl4Py4CuBIarSQnba0Xq27iijLTqAzl7jo9Ywq5iCzjUNq2GTO8DX3zOJq8hN5uI4YNXow=="
+    },
+    "@types/node@22.15.2": {
+      "integrity": "sha512-uKXqKN9beGoMdBfcaTY1ecwz6ctxuJAcUlwE55938g0ZJ8lRxwAZqRz2AJ4pzpt5dHdTPMB863UZ0ESiFUcP7A==",
+      "dependencies": [
+        "undici-types"
+      ]
+    },
+    "chevrotain@11.0.3": {
+      "integrity": "sha512-ci2iJH6LeIkvP9eJW6gpueU8cnZhv85ELY8w8WiFtNjMHA5ad6pQLaJo9mEly/9qUyCpvqX8/POVUTf18/HFdw==",
+      "dependencies": [
+        "@chevrotain/cst-dts-gen",
+        "@chevrotain/gast",
+        "@chevrotain/regexp-to-ast",
+        "@chevrotain/types",
+        "@chevrotain/utils",
+        "lodash-es"
+      ]
+    },
+    "jsep@1.4.0": {
+      "integrity": "sha512-B7qPcEVE3NVkmSJbaYxvv4cHkVW7DQsZz13pUMrfS8z8Q/BuShN+gcTXrUlPiGqM2/t/EEaI030bpxMqY8gMlw=="
+    },
+    "kdljs@0.3.0": {
+      "integrity": "sha512-tNb5vWkcouQKp8Q3CJ0BhA4ThcnWdVcY0Z+zertOelM8ywHVOabu3FZdDKldQj9j/CZt17eb5+kq/1Gg9GDtXg==",
+      "dependencies": [
+        "chevrotain"
+      ]
+    },
+    "lodash-es@4.17.21": {
+      "integrity": "sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw=="
+    },
+    "undici-types@6.21.0": {
+      "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@marshift/argus@^1.2.1",
+        "npm:@types/node@^22.15.2",
+        "npm:jsep@^1.4.0",
+        "npm:kdljs@0.3"
+      ]
+    }
+  }
+}
