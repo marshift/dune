@@ -1,0 +1,17 @@
+{
+	"name": "@dunejs/core",
+	"version": "0.1.0",
+	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
+	"exports": "./src/mod.ts",
+	"type": "module",
+	"dependencies": {
+		"jsep": "^1.4.0",
+		"kdljs": "^0.3.0"
+	},
+	"imports": {
+		"#lib/remote": {
+			"node": "./src/lib/remote/index.node.ts",
+			"default": "./src/lib/remote/index.web.ts"
+		}
+	}
+}

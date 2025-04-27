@@ -1,23 +1,7 @@
 {
-	"name": "dune",
-	"version": "0.1.0",
-	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
-	"main": "src/index.ts",
-	"author": "marshift",
+	"author": "marshift & contributors",
 	"license": "BSD-3-Clause",
-	"type": "module",
-	"dependencies": {
-		"@marshift/argus": "^1.2.1",
-		"jsep": "^1.4.0",
-		"kdljs": "^0.3.0"
-	},
 	"devDependencies": {
 		"@types/node": "^22.15.2"
-	},
-	"imports": {
-		"#lib/remote": {
-			"node": "./src/lib/remote/index.node.ts",
-			"default": "./src/lib/remote/index.web.ts"
-		}
 	}
 }

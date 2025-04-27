@@ -1,11 +1,6 @@
 {
+	"workspace": ["./packages/*"],
 	"compilerOptions": {
-		"lib": [
-			"esnext",
-			"dom",
-			"dom.iterable",
-			"dom.asynciterable"
-		],
 		"verbatimModuleSyntax": true
 	}
 }

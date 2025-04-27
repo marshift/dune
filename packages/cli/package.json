@@ -1,0 +1,11 @@
+{
+	"name": "@dunejs/cli",
+	"version": "0.1.0",
+	"description": "command line interface for dune, a static site generator and templating engine",
+	"main": "src/index.ts",
+	"type": "module",
+	"dependencies": {
+		"@marshift/argus": "^1.2.1",
+		"@dunejs/core": "*"
+	}
+}

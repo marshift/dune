@@ -70,11 +70,26 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@marshift/argus@^1.2.1",
-        "npm:@types/node@^22.15.2",
-        "npm:jsep@^1.4.0",
-        "npm:kdljs@0.3"
+        "npm:@types/node@^22.15.2"
       ]
+    },
+    "members": {
+      "packages/cli": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@dunejs/core@*",
+            "npm:@marshift/argus@^1.2.1"
+          ]
+        }
+      },
+      "packages/core": {
+        "packageJson": {
+          "dependencies": [
+            "npm:jsep@^1.4.0",
+            "npm:kdljs@0.3"
+          ]
+        }
+      }
     }
   }
 }
