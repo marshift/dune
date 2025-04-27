@@ -4,9 +4,15 @@
 	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
 	"exports": "./src/mod.ts",
 	"type": "module",
+	"scripts": {
+		"build": "esbuild ./src/mod.ts --outdir=./dist/ --format=esm --minify --bundle"
+	},
 	"dependencies": {
 		"jsep": "^1.4.0",
 		"kdljs": "^0.3.0"
+	},
+	"devDependencies": {
+		"esbuild": "^0.25.3"
 	},
 	"imports": {
 		"#lib/remote": {
