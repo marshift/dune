@@ -1,0 +1,6 @@
+page {
+	body {
+		p "The number passed from JS was ${number}"
+		p "The platform on which this template was rendered is ${userAgent}"
+	}
+}
