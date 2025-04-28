@@ -1,6 +1,7 @@
 import { fetch, importModule } from "#lib/remote";
 import { type Node as KDLNode, parse, query, type QueryString, type Value } from "kdljs";
 import { Adapter } from "./adapters/base.ts";
+import { JS_FILE_EXTENSIONS, TS_FILE_EXTENSIONS } from "./constants.ts";
 import { type Context, evaluate, remap, template } from "./expressions.js";
 
 function assertValueSize(node: KDLNode, expected: number) {
@@ -259,14 +260,14 @@ export class Parser {
 		if (!url.pathname.endsWith(".kdl")) throw new Error("Expected a KDL (\".kdl\") file");
 
 		const content = await fetch(url)
-			.then((m) => m.text())
+			.then((r) => r.text())
 			.catch((e: Error) => {
 				throw new Error(`Failed to fetch KDL file at "${url}": ${e.message}`);
 			});
 
 		let context: Context | undefined;
 
-		for (const ext of [".ts", ".js", ".mjs"]) {
+		for (const ext of [...JS_FILE_EXTENSIONS, ...TS_FILE_EXTENSIONS]) {
 			try {
 				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
 				const companion = await importModule(companionUrl.href);
