@@ -1,0 +1,3 @@
+component "date" {
+	p "This template was rendered on ${utc} (${iso})"
+}

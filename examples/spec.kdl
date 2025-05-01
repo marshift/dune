@@ -12,7 +12,7 @@ pages/
 // `import <path: string>` loads another file, you can use components defined there
 // imports are constrained to the current file, so importing A -> B -> C doesn't let you use C from A
 // remote file imports are also supported via URLs, e.g. `http://` or `file://`
-import "./components/component.kdl"
+import "./components/date.kdl"
 
 // `component <name: string> <body>` defines a reusable component
 // components take props which can be used inside of the body
@@ -83,6 +83,7 @@ page {
 
 			insert "footer" {
 				p "copyright cool people 2024"
+				use "date"
 
 				// `each <expression> <variable: string> <body>` iterates over an array
 				// e.g. imagine a passed `{ links: { href: string; text: string; }[] }`
