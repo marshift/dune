@@ -1,15 +1,15 @@
-/*
-example file structure:
-main.ts				# deno run -A main.ts (generates a `dist` folder)
-components/ 		# holds components
-	component.kdl
-pages/
-	index.kdl
-	index.ts		# optional for special properties to pass to `page` (see below)
-	subpage.kdl
+/* example file structure:
+	components/ 				# holds components
+		component.kdl
+	layouts/					# holds layouts - just components that define page "shells"
+		base.kdl
+	pages/
+		index.kdl
+		index.(js|mjs|ts|mts)	# optional, allows passing data into the template
+		subpage.kdl
 */
 
-// `import <path: string>` loads another file, you can use components defined there
+// `import <path: string>` loads another file (and its companion file), you can use components defined there
 // imports are constrained to the current file, so importing A -> B -> C doesn't let you use C from A
 // remote file imports are also supported via URLs, e.g. `http://` or `file://`
 import "./components/date.kdl"
@@ -48,6 +48,8 @@ component "greetings" {
 	// `use <name: string>` uses a reusable component
 	// pass props to components with KDL properties
 	// components can be nested inside other components
+	// the body of components are in an isolated context
+	// data can be passed in via templating the props
 	use "greeting" user="Jules" bold=#false
 	use "greeting" user="marsh" bold=#true
 }
@@ -67,8 +69,7 @@ component "content" {
 	}
 }
 
-// `page <body>` is the entrypoint of the page, it acts like a component
-// TypeScript code can pass props to this
+// `page <body>` is the entrypoint of the page, not required if a file only provides components
 page {
 	body {
 		use "content" {
@@ -82,13 +83,15 @@ page {
 			}
 
 			insert "footer" {
-				p "copyright cool people 2024"
+				p "copyright cool people 2025"
 				use "date"
 
 				// `each <expression> <variable: string> <body>` iterates over an array
 				// e.g. imagine a passed `{ links: { href: string; text: string; }[] }`
 				each "links" "link" {
-					a href="${link.href}" "${link.text}"
+					p {
+						a href="${link.href}" "${link.text}"
+					}
 				}
 			}
 		}
