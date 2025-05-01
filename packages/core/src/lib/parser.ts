@@ -251,7 +251,7 @@ export class Parser {
 	}
 
 	public convert(adapter: Adapter) {
-		if (!this.root) return null;
+		if (!this.root) throw new Error("Cannot convert a file with no page root");
 
 		const ast = this.walk(this.root);
 		return adapter.process(ast);
