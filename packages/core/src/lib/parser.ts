@@ -29,15 +29,23 @@ function assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
 	}
 }
 
+const isNodeExpectedType = (node: KDLNode, expected: string | RegExp) =>
+	!!node && (typeof expected === "string"
+		? node.name === expected
+		: expected.test(node.name));
+
+function assertParentNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
+	if (!isNodeExpectedType(parent, expected)) {
+		throw new Error(
+			`Invalid position for node of type \"${node.name}\", expected parent node to be of type \"${expected}\" but got \"${parent.name}\"`,
+		);
+	}
+}
+
 function assertPreviousNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
 	const thisIdx = parent.children.indexOf(node) - 1;
 	const prev = parent.children[thisIdx];
-	if (
-		!prev
-			|| typeof expected === "string"
-			? prev.name !== expected
-			: !expected.test(prev.name)
-	) {
+	if (!isNodeExpectedType(prev, expected)) {
 		throw new Error(
 			`Invalid position for node of type \"${node.name}\", expected previous node to be of type \"${expected}\" but got \"${prev.name}\"`,
 		);
@@ -57,6 +65,7 @@ type ParseableKDLNodeTypes =
 	| "else";
 
 interface KDLNodeVisitorOptions {
+	caller?: Parser;
 	ctx?: Context;
 	insertions?: Map<string, KDLNode>;
 }
@@ -79,6 +88,7 @@ export class Parser {
 	readonly document: KDLNode[];
 	readonly root?: KDLNode;
 	readonly components: Map<string, KDLNode>;
+	readonly dependencies: Map<string, Parser>;
 	globals: Context;
 
 	constructor(content: string, globals: Context = {}, dependencies = new Map<string, Parser>()) {
@@ -87,10 +97,8 @@ export class Parser {
 
 		this.document = output!;
 		this.root = this.query(this.document, "page", true);
-		this.components = new Map([
-			...this.extract(this.document, "component"),
-			...dependencies.values().flatMap((i) => i.components),
-		]);
+		this.components = this.extract(this.document, "component");
+		this.dependencies = dependencies;
 		this.globals = globals;
 	}
 
@@ -179,18 +187,22 @@ export class Parser {
 
 			// Components
 			case "insert": {
-				assertPreviousNodeType(node, parent, "use");
+				assertParentNodeType(node, parent, "use");
 				return;
 			}
 			case "use": {
 				assertValueSize(node, 1);
 				assertStringValue(node.values[0]);
 
-				const component = this.components.get(node.values[0]);
-				if (!component) throw new Error(`Unknown component \"${node.values[0]}\"`);
+				const name = node.values[0];
+				const parser = [this, ...this.dependencies.values()].find((p) => p.components.has(name));
+				if (!parser) throw new Error(`Unknown component \"${name}\"`);
 
-				return this.walk(component, {
-					ctx: remap(node.properties, options.ctx), // Component context is isolated
+				const component = parser.components.get(name)!;
+
+				return parser.walk(component, {
+					caller: this,
+					ctx: remap(node.properties, options.ctx), // Component body is an isolated context
 					insertions: this.extract(node.children, "insert"),
 				});
 			}
@@ -201,7 +213,7 @@ export class Parser {
 				const insertion = options.insertions?.get(node.values[0]);
 				if (!insertion) return;
 
-				return this.walk(insertion, options);
+				return options.caller!.walk(insertion, options);
 			}
 
 			// Elements
