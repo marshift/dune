@@ -77,16 +77,13 @@ export function evaluate(expr, ctx, stringify = false) {
  * @returns {string}
  */
 export function template(str, ctx) {
-	const templates = Array.from(str.matchAll(/\${(.*?)}/g), (m) => ({
-		start: m.index,
-		end: m[0].length,
-		expr: m[1],
+	const matches = Array.from(str.matchAll(/\${(.*?)}/g), (m) => ({
+		template: m[0],
+		expression: m[1],
 	}));
 
-	const chars = str.split("");
-	templates.forEach((t) => chars.splice(t.start, t.end, evaluate(t.expr, ctx, true)));
-
-	return chars.join("");
+	matches.forEach((m) => str = str.replace(m.template, evaluate(m.expression, ctx, true)));
+	return str;
 }
 
 /**
