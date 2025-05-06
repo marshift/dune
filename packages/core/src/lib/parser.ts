@@ -65,9 +65,12 @@ type ParseableKDLNodeTypes =
 	| "else";
 
 interface KDLNodeVisitorOptions {
+	// Cross-parser interactions
 	caller?: Parser;
-	ctx?: Context;
 	insertions?: Map<string, KDLNode>;
+
+	// General
+	ctx?: Context;
 }
 
 interface DuneElementNode {
@@ -141,8 +144,9 @@ export class Parser {
 				return;
 			}
 			case "if": {
-				const thisIdx = parent.children.indexOf(node);
-				const block = parent.children.slice(thisIdx);
+				const startIdx = parent.children.indexOf(node);
+				const endIdx = parent.children.findIndex((node) => /if|elif|else/.test(node.name));
+				const block = parent.children.slice(startIdx, endIdx);
 
 				outer: for (const member of block) {
 					switch (member.name) {
@@ -154,12 +158,9 @@ export class Parser {
 							const result = !!evaluate(member.values[0], options.ctx);
 							if (!result) continue outer;
 						}
-						/* falls through */
+						// falls through
 						case "else": {
 							return this.walk(member, options);
-						}
-						default: {
-							break outer;
 						}
 					}
 				}
@@ -195,15 +196,15 @@ export class Parser {
 				assertStringValue(node.values[0]);
 
 				const name = node.values[0];
-				const parser = [this, ...this.dependencies.values()].find((p) => p.components.has(name));
-				if (!parser) throw new Error(`Unknown component \"${name}\"`);
+				const callee = [this, ...this.dependencies.values()].find((p) => p.components.has(name));
+				if (!callee) throw new Error(`Unknown component \"${name}\"`);
 
-				const component = parser.components.get(name)!;
+				const component = callee.components.get(name)!;
 
-				return parser.walk(component, {
+				return callee.walk(component, {
 					caller: this,
-					ctx: remap(node.properties, options.ctx), // Component body is an isolated context
 					insertions: this.extract(node.children, "insert"),
+					ctx: remap(node.properties, options.ctx), // Component body is an isolated context
 				});
 			}
 			case "slot": {
@@ -279,7 +280,6 @@ export class Parser {
 			});
 
 		let context: Context | undefined;
-
 		for (const ext of [...JS_FILE_EXTENSIONS, ...TS_FILE_EXTENSIONS]) {
 			try {
 				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
