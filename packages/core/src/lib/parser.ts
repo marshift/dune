@@ -273,7 +273,7 @@ export class Parser {
 	static async for(url: URL): Promise<Parser> {
 		if (!url.pathname.endsWith(".kdl")) throw new Error("Expected a KDL (\".kdl\") file");
 
-		const content = await fetch(url)
+		const content = await fetch(url, { cache: "no-cache" })
 			.then((r) => r.text())
 			.catch((e: Error) => {
 				throw new Error(`Failed to fetch KDL file at "${url}": ${e.message}`);
@@ -282,7 +282,7 @@ export class Parser {
 		let context: Context | undefined;
 		for (const ext of [...JS_FILE_EXTENSIONS, ...TS_FILE_EXTENSIONS]) {
 			try {
-				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
+				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext + `?v=${Date.now()}`);
 				const companion = await importModule(companionUrl.href);
 				context = companion.default;
 				break;
