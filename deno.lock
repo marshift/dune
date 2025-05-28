@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@marshift/argus@^1.2.1": "1.2.1",
     "npm:@types/node@^22.15.2": "22.15.2",
+    "npm:defu@^6.1.4": "6.1.4",
     "npm:esbuild@~0.25.3": "0.25.3",
     "npm:jsep@^1.4.0": "1.4.0",
     "npm:kdljs@0.3": "0.3.0",
@@ -263,6 +264,9 @@
         "which"
       ]
     },
+    "defu@6.1.4": {
+      "integrity": "sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg=="
+    },
     "eastasianwidth@0.2.0": {
       "integrity": "sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA=="
     },
@@ -497,7 +501,8 @@
       "packages/cli": {
         "packageJson": {
           "dependencies": [
-            "npm:@marshift/argus@^1.2.1"
+            "npm:@marshift/argus@^1.2.1",
+            "npm:defu@^6.1.4"
           ]
         }
       },

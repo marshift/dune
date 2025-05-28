@@ -1,6 +1,7 @@
 import type { ArgusContext } from "@marshift/argus";
+import type { DuneConfig } from "../lib/config.ts";
 
 export abstract class Command {
 	abstract name: string;
-	abstract execute(ctx: ArgusContext): Promise<void>;
+	abstract execute(config: DuneConfig, ctx: ArgusContext): Promise<void>;
 }
