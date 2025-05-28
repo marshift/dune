@@ -6,6 +6,6 @@
 	"type": "module",
 	"dependencies": {
 		"@marshift/argus": "^1.2.1",
-		"@dunejs/core": "*"
+		"@dunejs/core": "workspace:*"
 	}
 }
