@@ -4,6 +4,9 @@
 	"description": "command line interface for dune, a static site generator and templating engine",
 	"exports": "./src/mod.ts",
 	"main": "./src/cli.ts",
+	"bin": {
+		"dune": "./src/cli.ts"
+	},
 	"type": "module",
 	"dependencies": {
 		"@marshift/argus": "^1.2.1",
