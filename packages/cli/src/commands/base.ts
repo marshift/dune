@@ -1,5 +1,5 @@
 import type { ArgusContext } from "@marshift/argus";
-import type { DuneConfig } from "../lib/config.ts";
+import type { DuneConfig } from "../lib/config";
 
 export abstract class Command {
 	abstract name: string;

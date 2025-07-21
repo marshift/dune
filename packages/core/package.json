@@ -2,31 +2,42 @@
 	"name": "@dunejs/core",
 	"version": "0.1.0",
 	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
-	"exports": "./src/mod.ts",
 	"type": "module",
+	"files": [
+		"./src/",
+		"./dist/"
+	],
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			}
+		},
+		"./package.json": "./package.json"
+	},
+	"imports": {
+		"#lib/remote/fetch": {
+			"deno": "./dist/lib/remote/fetch/web.js",
+			"bun": "./dist/lib/remote/fetch/web.js",
+			"node": "./dist/lib/remote/fetch/node.js",
+			"default": "./dist/lib/remote/fetch/web.js"
+		},
+		"#lib/remote/import": {
+			"deno": "./dist/lib/remote/import/vanilla.js",
+			"bun": "./dist/lib/remote/import/vanilla.js",
+			"node": "./dist/lib/remote/import/uri.js",
+			"default": "./dist/lib/remote/import/uri.js"
+		}
+	},
 	"scripts": {
-		"build": "esbuild ./src/mod.ts --outdir=./dist/ --format=esm --minify --bundle"
+		"prepublish": "tsc"
 	},
 	"dependencies": {
 		"jsep": "^1.4.0",
 		"kdljs": "^0.3.0",
 		"sucrase": "^3.35.0"
-	},
-	"devDependencies": {
-		"esbuild": "^0.25.3"
-	},
-	"imports": {
-		"#lib/remote/fetch": {
-			"deno": "./src/lib/remote/fetch/web.ts",
-			"bun": "./src/lib/remote/fetch/web.ts",
-			"node": "./src/lib/remote/fetch/node.ts",
-			"default": "./src/lib/remote/fetch/web.ts"
-		},
-		"#lib/remote/import": {
-			"deno": "./src/lib/remote/import/vanilla.ts",
-			"bun": "./src/lib/remote/import/vanilla.ts",
-			"node": "./src/lib/remote/import/uri.ts",
-			"default": "./src/lib/remote/import/uri.ts"
-		}
 	}
 }

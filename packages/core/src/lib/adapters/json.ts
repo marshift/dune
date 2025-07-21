@@ -1,5 +1,5 @@
-import type { DuneNode } from "../parser.ts";
-import { Adapter } from "./base.ts";
+import type { DuneNode } from "../parser.js";
+import { Adapter } from "./base.js";
 
 export class JSONAdapter extends Adapter {
 	private pretty? = false;

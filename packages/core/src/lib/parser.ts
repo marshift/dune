@@ -1,8 +1,8 @@
 import fetch from "#lib/remote/fetch";
 import importModule from "#lib/remote/import";
 import { type Node as KDLNode, parse, query, type QueryString, type Value } from "kdljs";
-import { Adapter } from "./adapters/base.ts";
-import { JS_FILE_EXTENSIONS, TS_FILE_EXTENSIONS } from "./constants.ts";
+import { Adapter } from "./adapters/base.js";
+import { JS_FILE_EXTENSIONS, TS_FILE_EXTENSIONS } from "./constants.js";
 import { type Context, evaluate, remap, template } from "./expressions.js";
 
 function assertValueSize(node: KDLNode, expected: number) {
@@ -158,7 +158,6 @@ export class Parser {
 							const result = !!evaluate(member.values[0], options.ctx);
 							if (!result) continue outer;
 						}
-						// falls through
 						case "else": {
 							return this.walk(member, options);
 						}

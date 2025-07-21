@@ -1,6 +1,6 @@
-import type { Command } from "./base.ts";
-import { BuildCommand } from "./build.ts";
-import { ServeCommand } from "./serve.ts";
+import type { Command } from "./base";
+import { BuildCommand } from "./build";
+import { ServeCommand } from "./serve";
 
 export const commands: Array<Command> = [
 	new BuildCommand(),

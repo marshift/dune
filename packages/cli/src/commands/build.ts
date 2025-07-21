@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { buildAll, copyStaticAssets } from "../lib/builder.ts";
-import type { DuneConfig } from "../lib/config.ts";
-import { Command } from "./base.ts";
+import { buildAll, copyStaticAssets } from "../lib/builder";
+import type { DuneConfig } from "../lib/config";
+import { Command } from "./base";
 
 export class BuildCommand extends Command {
 	override name = "build";

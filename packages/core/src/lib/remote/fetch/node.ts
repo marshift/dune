@@ -3,7 +3,7 @@
 import { createReadStream } from "node:fs";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import webFetch from "./web.ts";
+import webFetch from "./web.js";
 
 const fetch: typeof globalThis.fetch = (input, init) => {
 	const url = new URL(input instanceof Request ? input.url : input.toString());

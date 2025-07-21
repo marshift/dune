@@ -1,4 +1,4 @@
-import { assertProtocol } from "../shared.ts";
+import { assertProtocol } from "../shared.js";
 
 function importModule(url: string) {
 	assertProtocol(url);

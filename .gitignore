@@ -1,5 +1,5 @@
 node_modules/
 dist/
 package-lock.json
-pnpm-lock.yaml
+deno.lock
 bun.lock[b]

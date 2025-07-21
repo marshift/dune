@@ -1,3 +1,3 @@
-export * from "./base.ts";
-export * from "./html.ts";
-export * from "./json.ts";
+export * from "./base.js";
+export * from "./html.js";
+export * from "./json.js";

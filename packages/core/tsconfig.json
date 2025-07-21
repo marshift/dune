@@ -1,0 +1,13 @@
+{
+	"extends": "../../tsconfig.json",
+	"include": ["./src/**/*"],
+	"compilerOptions": {
+		"rootDir": "./src/",
+		"outDir": "./dist/",
+		"target": "ES2022",
+		"module": "NodeNext",
+		"declaration": true,
+		"skipLibCheck": true,
+		"allowJs": true
+	}
+}

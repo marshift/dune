@@ -1,7 +1,9 @@
+#!/usr/bin/env node
+
 import { createContext } from "@marshift/argus";
 import process from "node:process";
-import { commands, getNames } from "./commands/index.ts";
-import { findNearestConfig, loadConfig } from "./lib/config.ts";
+import { commands, getNames } from "./commands";
+import { findNearestConfig, loadConfig } from "./lib/config";
 
 const ctx = createContext(process.argv.slice(2));
 

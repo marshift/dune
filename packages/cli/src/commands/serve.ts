@@ -1,8 +1,8 @@
 import type { ArgusContext } from "@marshift/argus";
 import { join } from "node:path";
-import type { DuneConfig } from "../lib/config.ts";
-import { createSSRServer } from "../lib/ssr.ts";
-import { Command } from "./base.ts";
+import type { DuneConfig } from "../lib/config";
+import { createSSRServer } from "../lib/ssr";
+import { Command } from "./base";
 
 export class ServeCommand extends Command {
 	override name = "serve";
