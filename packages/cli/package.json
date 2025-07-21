@@ -24,8 +24,10 @@
 	"scripts": {
 		"prepublish": "tsup ./src/index.ts ./src/cli.ts --clean --dts --format esm"
 	},
+	"peerDependencies": {
+		"@dunejs/core": "workspace:0.x"
+	},
 	"dependencies": {
-		"@dunejs/core": "workspace:*",
 		"@marshift/argus": "^1.2.2",
 		"defu": "^6.1.4"
 	},
