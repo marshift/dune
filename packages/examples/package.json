@@ -3,7 +3,8 @@
 	"type": "module",
 	"scripts": {
 		"build": "dune build",
-		"serve": "dune serve"
+		"serve": "dune serve",
+		"dev": "dune serve --dev"
 	},
 	"dependencies": {
 		"@dunejs/cli": "workspace:*",

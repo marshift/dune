@@ -2,7 +2,6 @@ import fetch from "#lib/remote/fetch";
 import importModule from "#lib/remote/import";
 import { type Node as KDLNode, parse, query, type QueryString, type Value } from "kdljs";
 import { Adapter } from "./adapters/base.js";
-import { JS_FILE_EXTENSIONS, TS_FILE_EXTENSIONS } from "./constants.js";
 import { type Context, evaluate, remap, template } from "./expressions.js";
 
 function assertValueSize(node: KDLNode, expected: number) {
@@ -22,7 +21,6 @@ function assertStringValue(value: Value): asserts value is string {
 	}
 }
 
-// deno-lint-ignore no-explicit-any
 function assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
 	if (obj == null || typeof obj[Symbol.iterator] !== "function") {
 		throw new Error("Expected an iterable");
@@ -137,7 +135,7 @@ export class Parser {
 
 		// Build the AST
 		switch (node.name as ParseableKDLNodeTypes) {
-			// Flow
+			// #region Flow
 			case "else":
 			case "elif": {
 				assertPreviousNodeType(node, parent, /if|elif/);
@@ -187,7 +185,7 @@ export class Parser {
 				return iterations.flat();
 			}
 
-			// Components
+			// #region Components
 			case "insert": {
 				assertParentNodeType(node, parent, "use");
 				return;
@@ -218,7 +216,7 @@ export class Parser {
 				return options.caller!.walk(insertion, options);
 			}
 
-			// Elements
+			// #region Elements
 			case "text": {
 				assertValueSize(node, 1);
 				assertStringValue(node.values[0]);
@@ -281,7 +279,7 @@ export class Parser {
 			});
 
 		let context: Context | undefined;
-		for (const ext of [...JS_FILE_EXTENSIONS, ...TS_FILE_EXTENSIONS]) {
+		for (const ext of [".js", ".mjs", ".ts", ".mts"]) {
 			try {
 				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext + `?v=${Date.now()}`);
 				const companion = await importModule(companionUrl.href);
@@ -292,11 +290,10 @@ export class Parser {
 			}
 		}
 
-		// TODO: Making two seperate parsers for this is a bit hacky but... blegh.
-		const parser = new Parser(content, context);
+		const depsParser = new Parser(content, context);
 		const dependencies = new Map(
 			await Promise.all(
-				parser.query(parser.document, "import").map(async (child) => {
+				depsParser.query(depsParser.document, "import").map(async (child) => {
 					assertStringValue(child.values[0]);
 					return [
 						child.values[0],
