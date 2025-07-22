@@ -30,13 +30,16 @@ export async function findNearestConfig(from: string): Promise<DuneConfig> {
 	const { root } = parse(current);
 
 	while (current !== root) {
-		try {
-			// TODO: More filetypes for config?
-			const config = await loadConfig(join(current, "dune.config.mjs"));
-			return config;
-		} catch {
-			current = dirname(current);
+		for (const ext of [".js", ".mjs"]) {
+			try {
+				const config = await loadConfig(join(current, "dune.config" + ext));
+				return config;
+			} catch {
+				continue;
+			}
 		}
+
+		current = dirname(current);
 	}
 
 	return DEFAULT_CONFIG;
