@@ -4,7 +4,7 @@
 	"compilerOptions": {
 		"rootDir": "./src/",
 		"outDir": "./dist/",
-		"target": "ES2022",
+		"target": "ES2024",
 		"module": "NodeNext",
 		"declaration": true,
 		"skipLibCheck": true,
