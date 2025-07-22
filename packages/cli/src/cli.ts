@@ -7,7 +7,7 @@ import { findNearestConfig, loadConfig } from "./lib/config";
 
 const ctx = createContext(process.argv.slice(2));
 
-const commandName = ctx.consumePositionalArg(true);
+const commandName = ctx.consumePositionalArg(false);
 const command = commands.find((c) => c.name === commandName);
 
 const configPath = ctx.getOptionalArg(/--config|-c/);
