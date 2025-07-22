@@ -22,7 +22,7 @@
 		"dune": "./dist/cli.js"
 	},
 	"scripts": {
-		"prepublish": "tsup ./src/index.ts ./src/cli.ts --clean --dts --format esm"
+		"prepublish": "tsup"
 	},
 	"peerDependencies": {
 		"@dunejs/core": "workspace:0.x"
