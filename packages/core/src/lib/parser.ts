@@ -144,22 +144,24 @@ export class Parser {
 				return;
 			}
 			case "if": {
-				const startIdx = parent.children.indexOf(node);
-				const endIdx = parent.children.findIndex((node) => /if|elif|else/.test(node.name));
-				const block = parent.children.slice(startIdx, endIdx);
+				const thisIdx = parent.children.indexOf(node);
+				const siblings = parent.children.slice(thisIdx);
 
-				outer: for (const member of block) {
-					switch (member.name) {
+				outer: for (const sibling of siblings) {
+					switch (sibling.name) {
 						case "elif":
 						case "if": {
-							assertValueSize(member, 1);
-							assertStringValue(member.values[0]);
+							assertValueSize(sibling, 1);
+							assertStringValue(sibling.values[0]);
 
-							const result = !!evaluate(member.values[0], options.ctx);
+							const result = !!evaluate(sibling.values[0], options.ctx);
 							if (!result) continue outer;
 						}
 						case "else": {
-							return this.walk(member, options);
+							return this.walk(sibling, options);
+						}
+						default: {
+							break outer;
 						}
 					}
 				}
