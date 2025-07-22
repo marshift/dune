@@ -1,5 +1,6 @@
 import { HTMLAdapter, Parser } from "@dunejs/core";
 import { watch } from "chokidar";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
@@ -20,29 +21,58 @@ function getPathname(req: IncomingMessage) {
 	}
 }
 
-// TODO: Something like onError
+const errorDoc = `
+page {
+	body {
+		h1 "\${text}"
+		if "error" {
+			code "\${error}"
+		}
+	}
+}
+`;
+
 async function handleFile(
 	{ templateDir, staticDir }: ServerOptions,
 	res: ServerResponse,
 	pathname: string,
 	onKDLDocument: (parser: Parser) => string,
 ) {
-	try {
-		const parser = await Parser.for(pathToFileURL(join(templateDir, "pages", pathname + ".kdl")));
-		const content = onKDLDocument(parser);
+	const pagesDir = join(templateDir, "pages");
+	const maybeKDLPath = join(pagesDir, pathname + ".kdl");
+	const maybeStaticPath = join(staticDir, pathname);
 
-		res.writeHead(200);
-		return res.end(content);
-	} catch (e) {}
+	if (existsSync(maybeKDLPath)) {
+		try {
+			const parser = await Parser.for(pathToFileURL(maybeKDLPath));
+			const content = onKDLDocument(parser);
 
-	try {
+			res.writeHead(200);
+			return res.end(content);
+		} catch (e) {
+			console.error(e);
+
+			const errorParser = new Parser(errorDoc, {
+				text: "Internal Server Error",
+				error: String(e),
+			});
+			const content = onKDLDocument(errorParser);
+
+			res.writeHead(500);
+			return res.end(content);
+		}
+	} else if (existsSync(maybeStaticPath)) {
 		const content = await readFile(join(staticDir, pathname));
 		res.writeHead(200);
 		return res.end(content);
-	} catch { /* Empty block */ }
+	} else {
+		const notFoundParser = await Parser.for(pathToFileURL(join(pagesDir, "404.kdl")))
+			.catch(() => new Parser(errorDoc, { text: "Not Found", error: null }));
+		const content = onKDLDocument(notFoundParser);
 
-	res.writeHead(404);
-	return res.end();
+		res.writeHead(404);
+		return res.end(content);
+	}
 }
 
 const hotReloadNodes = new Parser(`
