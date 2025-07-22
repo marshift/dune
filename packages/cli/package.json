@@ -2,6 +2,10 @@
 	"name": "@dunejs/cli",
 	"version": "1.0.0",
 	"description": "command line interface for dune, a static site generator and templating engine",
+	"repository": {
+		"url": "https://github.com/marshift/dune",
+		"directory": "packages/cli"
+	},
 	"type": "module",
 	"files": [
 		"./src/",

@@ -2,6 +2,10 @@
 	"name": "@dunejs/core",
 	"version": "1.0.0",
 	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
+	"repository": {
+		"url": "https://github.com/marshift/dune",
+		"directory": "packages/core"
+	},
 	"type": "module",
 	"files": [
 		"./src/",
