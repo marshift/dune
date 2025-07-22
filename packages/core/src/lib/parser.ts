@@ -262,12 +262,12 @@ export class Parser {
 		}
 	}
 
-	public convert(adapter: Adapter) {
-		if (!this.root) throw new Error("Cannot convert a file with no page root");
-
-		const ast = this.walk(this.root);
-		return adapter.process(ast);
+	public toAST() {
+		if (!this.root) throw new Error("Cannot get an AST from a document with no page root");
+		return this.walk(this.root);
 	}
+
+	public convert = (adapter: Adapter) => adapter.process(this.toAST());
 
 	static async for(url: URL): Promise<Parser> {
 		if (!url.pathname.endsWith(".kdl")) throw new Error("Expected a KDL (\".kdl\") file");
