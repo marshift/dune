@@ -1,0 +1,12 @@
+page {
+	head {
+		link rel="stylesheet" href="style.css"
+	}
+	body {
+		p {
+			text "This page is styled, to show off the "
+			code "public/"
+			text " folder support!"
+		}
+	}
+}

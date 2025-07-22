@@ -1,0 +1,12 @@
+{
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "dune build",
+		"serve": "dune serve"
+	},
+	"dependencies": {
+		"@dunejs/cli": "workspace:*",
+		"@dunejs/core": "workspace:*"
+	}
+}

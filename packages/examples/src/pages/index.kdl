@@ -1,0 +1,15 @@
+page {
+	body {
+		h1 "Hi!"
+		p "Thanks for checking out dune."
+		hr
+		p "The examples available currently are:"
+		ui {
+			each "examples" "example" {
+				li {
+					a href="/${example}" "${example}"
+				}
+			}
+		}
+	}
+}

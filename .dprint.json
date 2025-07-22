@@ -3,6 +3,7 @@
 	"lineWidth": 120,
 	"plugins": [
 		"https://plugins.dprint.dev/typescript-0.95.8.wasm",
-		"https://plugins.dprint.dev/json-0.20.0.wasm"
+		"https://plugins.dprint.dev/json-0.20.0.wasm",
+		"https://plugins.dprint.dev/g-plane/malva-v0.13.1.wasm"
 	]
 }

@@ -43,6 +43,15 @@ importers:
         specifier: ^3.35.0
         version: 3.35.0
 
+  packages/examples:
+    dependencies:
+      '@dunejs/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@dunejs/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@chevrotain/cst-dts-gen@11.0.3':

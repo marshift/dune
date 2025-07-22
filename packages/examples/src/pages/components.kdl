@@ -1,4 +1,4 @@
-import "./components/say.kdl" // Provides "say"
+import "../components/say.kdl" // Provides "say"
 
 component "nesting-demo" {
 	use "say" word="nested"
