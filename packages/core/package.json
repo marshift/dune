@@ -1,6 +1,6 @@
 {
 	"name": "@dunejs/core",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "templating engine and static site generator using [KDL](//kdl.dev)",
 	"type": "module",
 	"files": [
