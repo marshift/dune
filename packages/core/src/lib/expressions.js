@@ -36,6 +36,13 @@ function reduce(node, ctx) {
 				reduce(node.right, ctx),
 			);
 		}
+		case "UnaryExpression": {
+			if (!node.prefix || node.argument.type !== "UnaryExpression") throw new SyntaxError("Unexpected operator");
+
+			return Function("v", `return ${node.operator}v`)(
+				reduce(node.argument, ctx),
+			);
+		}
 		case "ConditionalExpression": {
 			return Function("t, c, a", `return t ? c : a`)(
 				reduce(node.test, ctx),
