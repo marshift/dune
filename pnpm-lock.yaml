@@ -23,6 +23,9 @@ importers:
       '@marshift/argus':
         specifier: ^1.2.2
         version: 1.2.2
+      chokidar:
+        specifier: ^4.0.3
+        version: 4.0.3
       defu:
         specifier: ^6.1.4
         version: 6.1.4

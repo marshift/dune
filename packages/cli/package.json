@@ -29,6 +29,7 @@
 	},
 	"dependencies": {
 		"@marshift/argus": "^1.2.2",
+		"chokidar": "^4.0.3",
 		"defu": "^6.1.4"
 	},
 	"devDependencies": {
