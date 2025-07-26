@@ -1,20 +1,20 @@
 /// <reference types="@types/node" />
 
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
+import { BadStatusCodeError } from "../shared.js";
 import webFetch from "./web.js";
 
-const fetch: typeof globalThis.fetch = (input, init) => {
+const fetch: typeof globalThis.fetch = async (input, init) => {
 	const url = new URL(input instanceof Request ? input.url : input.toString());
+	if (url.protocol !== "file:") return await webFetch(input, init);
 
-	if (url.protocol === "file:") {
-		const path = fileURLToPath(url);
-		const stream = Readable.toWeb(createReadStream(path)) as ReadableStream; // I don't like the `as` but whatever
-		return Promise.resolve(new Response(stream));
-	}
+	const path = fileURLToPath(url);
+	if (!existsSync(path)) throw new BadStatusCodeError(404);
 
-	return webFetch(input, init);
+	const stream = Readable.toWeb(createReadStream(path)) as ReadableStream; // I don't like the `as` but whatever
+	return new Response(stream);
 };
 
 export default fetch;
