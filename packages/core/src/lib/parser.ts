@@ -108,7 +108,7 @@ export class Parser {
 	private query(document: KDLNode[], str: QueryString, single = false) {
 		const result: KDLNode[] = query(document, str);
 		if (single) {
-			if (result.length > 1) throw new Error(`Expected single instance for query "${str}"`);
+			if (result.length > 1) throw new Error(`Expected single instance for query \"${str}\"`);
 			return result[0];
 		} else {
 			return result;
@@ -285,8 +285,9 @@ export class Parser {
 				const companion = await importModule(companionUrl.href);
 				context = companion.default;
 				break;
-			} catch {
-				continue;
+			} catch (e) {
+				if ((e as any).code === "ERR_MODULE_NOT_FOUND") continue;
+				throw e;
 			}
 		}
 
