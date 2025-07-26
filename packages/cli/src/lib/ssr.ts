@@ -3,22 +3,12 @@ import { watch } from "chokidar";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 interface ServerOptions {
 	templateDir: string;
 	staticDir: string;
-}
-
-function getPathname(req: IncomingMessage) {
-	const { pathname } = new URL(`http://dune.rocks${req.url}`);
-	if (pathname.endsWith("/")) {
-		const dir = dirname(pathname);
-		return `${dir}/index`;
-	} else {
-		return pathname;
-	}
 }
 
 const errorDoc = `
@@ -39,18 +29,24 @@ async function handleFile(
 	onKDLDocument: (parser: Parser) => string,
 ) {
 	const pagesDir = join(templateDir, "pages");
-	const maybeKDLPath = join(pagesDir, pathname + ".kdl");
-	const maybeStaticPath = join(staticDir, pathname);
+	const paths = [
+		join(pagesDir, pathname, "index.kdl"),
+		join(pagesDir, pathname + ".kdl"),
+		join(staticDir, pathname),
+	];
 
-	if (existsSync(maybeKDLPath)) {
+	for (const path of paths) {
+		if (!existsSync(path)) continue;
+
 		try {
-			const parser = await Parser.for(pathToFileURL(maybeKDLPath));
-			const content = onKDLDocument(parser);
+			const content = await (path.endsWith(".kdl")
+				? Parser.for(pathToFileURL(path)).then(onKDLDocument)
+				: readFile(path)); // No encoding, we just want the bytes
 
 			res.writeHead(200);
 			return res.end(content);
 		} catch (e) {
-			console.error(e);
+			console.error(e); // Show the full stack trace to the developer
 
 			const errorParser = new Parser(errorDoc, {
 				text: "Internal Server Error",
@@ -61,19 +57,17 @@ async function handleFile(
 			res.writeHead(500);
 			return res.end(content);
 		}
-	} else if (existsSync(maybeStaticPath)) {
-		const content = await readFile(join(staticDir, pathname));
-		res.writeHead(200);
-		return res.end(content);
-	} else {
-		const notFoundParser = await Parser.for(pathToFileURL(join(pagesDir, "404.kdl")))
-			.catch(() => new Parser(errorDoc, { text: "Not Found", error: null }));
-		const content = onKDLDocument(notFoundParser);
-
-		res.writeHead(404);
-		return res.end(content);
 	}
+
+	const notFoundParser = await Parser.for(pathToFileURL(join(pagesDir, "404.kdl")))
+		.catch(() => new Parser(errorDoc, { text: "Not Found", error: null }));
+	const content = onKDLDocument(notFoundParser);
+
+	res.writeHead(404);
+	return res.end(content);
 }
+
+const getPathname = (req: IncomingMessage) => new URL(`http://dune.rocks${req.url}`).pathname;
 
 const hotReloadNodes = new Parser(`
 page {
