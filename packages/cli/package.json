@@ -1,6 +1,6 @@
 {
 	"name": "@dunejs/cli",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "command line interface for dune, a static site generator and templating engine",
 	"repository": {
 		"url": "https://github.com/marshift/dune",
