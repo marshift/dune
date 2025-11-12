@@ -5,7 +5,7 @@ import { Command } from "./base";
 
 export class ServeCommand extends Command {
 	override name = "serve";
-	override execute({ templateDir, staticDir }: DuneConfig, ctx: ArgusContext): Promise<void> {
+	override execute({ templateDir, staticDir }: DuneConfig, ctx: ArgusContext) {
 		const port = ctx.getOptionalArg(/--port|-p/) ?? 1413;
 		const dev = ctx.hasOptionalArg(/--dev|-d/);
 		const server = (dev ? createDevServer : createSSRServer)({

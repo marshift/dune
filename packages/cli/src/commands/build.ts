@@ -5,7 +5,7 @@ import { Command } from "./base";
 
 export class BuildCommand extends Command {
 	override name = "build";
-	override async execute({ templateDir, staticDir, outDir }: DuneConfig): Promise<void> {
+	override async execute({ templateDir, staticDir, outDir }: DuneConfig) {
 		await copyStaticAssets(staticDir, outDir);
 		await buildAll(join(templateDir, "./pages/"), outDir);
 	}
