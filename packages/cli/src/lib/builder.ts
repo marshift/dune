@@ -27,6 +27,6 @@ export const copyStaticAssets = (inDir: string, outDir: string) =>
 		paths.forEach(async (e) => {
 			const inPath = join(e.parentPath, e.name);
 			const outPath = join(outDir, e.name);
-			await cp(inPath, outPath);
+			await cp(inPath, outPath, { recursive: true });
 		})
 	);
