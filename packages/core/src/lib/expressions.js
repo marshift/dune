@@ -5,7 +5,8 @@ import * as KDL from "@bgotink/kdl";
 import jsep from "jsep";
 
 /** @typedef {Record<PropertyKey, KDL.Primitive>} KDLPrimitiveRecord */
-/** @typedef {KDL.Primitive | KDLPrimitiveRecord | Iterable<KDL.Primitive | KDLPrimitiveRecord>} Data */
+/** @typedef {KDL.Primitive | KDLPrimitiveRecord | Iterable<KDL.Primitive | KDLPrimitiveRecord>} StaticData */
+/** @typedef {StaticData | () => StaticData} Data */
 /** @typedef {Record<string, Data>} Environment */
 
 /**
@@ -30,17 +31,31 @@ function reduce(node, env) {
 
 			return value?.[key];
 		}
-		case "BinaryExpression": {
-			return Function("l, r", `return l ${node.operator} r`)(
-				reduce(node.left, env),
-				reduce(node.right, env),
+		case "ArrayExpression": {
+			return node.elements.map((elem) => reduce(elem, env));
+		}
+		case "CallExpression": {
+			const func = reduce(node.callee, env);
+			if (typeof func !== "function") throw new TypeError(`${node.callee.name} is not a function`);
+
+			return Reflect.apply(
+				func,
+				null,
+				node.arguments.map((arg) => reduce(arg, env)),
 			);
 		}
+
 		case "UnaryExpression": {
 			if (!node.prefix || node.argument.type !== "UnaryExpression") throw new SyntaxError("Unexpected operator");
 
 			return Function("v", `return ${node.operator}v`)(
 				reduce(node.argument, env),
+			);
+		}
+		case "BinaryExpression": {
+			return Function("l, r", `return l ${node.operator} r`)(
+				reduce(node.left, env),
+				reduce(node.right, env),
 			);
 		}
 		case "ConditionalExpression": {
@@ -49,6 +64,10 @@ function reduce(node, env) {
 				reduce(node.consequent, env),
 				reduce(node.alternate, env),
 			);
+		}
+
+		case "ThisExpression": {
+			return env;
 		}
 		default: {
 			throw new Error(`Unsupported expression type ${node.type}`);
