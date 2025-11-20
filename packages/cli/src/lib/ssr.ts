@@ -1,9 +1,10 @@
 import { HTMLAdapter, Parser } from "@dunejs/core";
 import { watch } from "chokidar";
+import mime from "mime";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 interface ServerOptions {
@@ -39,11 +40,21 @@ async function handleFile(
 		if (!existsSync(path)) continue;
 
 		try {
-			const content = await (path.endsWith(".kdl")
-				? Parser.for(pathToFileURL(path)).then(onKDLDocument)
-				: readFile(path)); // No encoding, we just want the bytes
+			const ext = extname(path);
+			let content;
 
-			res.writeHead(200);
+			if (ext === ".kdl") {
+				content = await Parser.for(pathToFileURL(path)).then(onKDLDocument);
+				res.writeHead(200, {
+					"content-type": "text/html",
+				});
+			} else {
+				content = await readFile(path); // No encoding, we just want the bytes
+				res.writeHead(200, {
+					"content-type": mime.getType(ext) ?? "text/plain",
+				});
+			}
+
 			return res.end(content);
 		} catch (e) {
 			console.error(e); // Show the full stack trace to the developer
