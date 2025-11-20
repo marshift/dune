@@ -1,57 +1,11 @@
 import fetch from "#lib/remote/fetch";
 import importModule from "#lib/remote/import";
-import { type Node as KDLNode, parse, query, type QueryString, type Value } from "kdljs";
-import { Adapter } from "./adapters/base.js";
-import { type Context, evaluate, remap, template } from "./expressions.js";
-
-function assertValueSize(node: KDLNode, expected: number) {
-	if (node.values.length !== expected) {
-		throw new Error(
-			`Incorrect number of values passed to node of type \"${node.name}\", expected ${expected} but got ${node.values.length}`,
-		);
-	}
-}
-
-function assertStringValue(value: Value): asserts value is string {
-	const type = typeof value;
-	if (type !== "string") {
-		throw new Error(
-			`Expected primitive value of type string but got ${type}`,
-		);
-	}
-}
-
-function assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
-	if (obj == null || typeof obj[Symbol.iterator] !== "function") {
-		throw new Error("Expected an iterable");
-	}
-}
-
-const isNodeExpectedType = (node: KDLNode, expected: string | RegExp) =>
-	!!node && (typeof expected === "string"
-		? node.name === expected
-		: expected.test(node.name));
-
-function assertParentNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
-	if (!isNodeExpectedType(parent, expected)) {
-		throw new Error(
-			`Invalid position for node of type \"${node.name}\", expected parent node to be of type \"${expected}\" but got \"${parent.name}\"`,
-		);
-	}
-}
-
-function assertPreviousNodeType(node: KDLNode, parent: KDLNode, expected: string | RegExp) {
-	const thisIdx = parent.children.indexOf(node) - 1;
-	const prev = parent.children[thisIdx];
-	if (!isNodeExpectedType(prev, expected)) {
-		throw new Error(
-			`Invalid position for node of type \"${node.name}\", expected previous node to be of type \"${expected}\" but got \"${prev.name}\"`,
-		);
-	}
-}
+import * as KDL from "@bgotink/kdl";
+import type { Adapter } from "./adapters/base.js";
+import { type Environment, evaluate, template, templateProperties } from "./expressions.js";
 
 // The parser should parse all of these, even if they're conditionally used
-type ParseableKDLNodeTypes =
+type DuneDirective =
 	| "element"
 	| "text"
 	| "slot"
@@ -61,15 +15,6 @@ type ParseableKDLNodeTypes =
 	| "if"
 	| "elif"
 	| "else";
-
-interface KDLNodeVisitorOptions {
-	// Cross-parser interactions
-	caller?: Parser;
-	insertions?: Map<string, KDLNode>;
-
-	// General
-	ctx?: Context;
-}
 
 interface DuneElementNode {
 	type: "element";
@@ -85,78 +30,155 @@ interface DuneTextNode {
 
 export type DuneNode = DuneElementNode | DuneTextNode;
 
+type KDLNodeMap = Map<string, KDL.Node>;
+type DependencyMap = Map<string, Parser>;
+
+interface VisitOptions {
+	// Cross-parser interactions
+	caller?: Parser;
+	insertions?: KDLNodeMap;
+
+	// General
+	env?: Environment;
+}
+
+// TODO: Unique errors for all failure cases?
+export class ParserError extends Error {}
+
 export class Parser {
-	readonly document: KDLNode[];
-	readonly root?: KDLNode;
-	readonly components: Map<string, KDLNode>;
-	readonly dependencies: Map<string, Parser>;
-	globals: Context;
+	readonly #document: KDL.Document;
+	readonly #root?: KDL.Node;
+	readonly #components: KDLNodeMap;
 
-	constructor(content: string, globals: Context = {}, dependencies = new Map<string, Parser>()) {
-		const { output, errors } = parse(content);
-		if (errors.length !== 0) throw new Error(["KDL parsing failed:", ...errors].join("\n"));
+	readonly imports: string[];
+	dependencies: DependencyMap;
+	globals: Environment;
 
-		this.document = output!;
-		this.root = this.query(this.document, "page", true);
-		this.components = this.extract(this.document, "component");
+	constructor(input: string | ArrayBuffer, globals: Environment = {}, dependencies: DependencyMap = new Map()) {
+		this.#document = KDL.parse(input);
+		this.#root = this.#document.findNodeByName("page");
+		this.#components = Parser.#mapNamedNodes(this.#document.findNodesByName("component"));
+
+		this.imports = this.#document.findNodesByName("import").map((node) => {
+			Parser.#assertArgumentLength(node, 1);
+
+			const path = node.getArgument(0);
+			Parser.#assertStringPrimitive(path);
+
+			return path;
+		});
 		this.dependencies = dependencies;
 		this.globals = globals;
 	}
 
-	private query(document: KDLNode[], str: QueryString): KDLNode[];
-	private query(document: KDLNode[], str: QueryString, single: boolean): KDLNode;
-	private query(document: KDLNode[], str: QueryString, single = false) {
-		const result: KDLNode[] = query(document, str);
-		if (single) {
-			if (result.length > 1) throw new Error(`Expected single instance for query \"${str}\"`);
-			return result[0];
-		} else {
-			return result;
+	// #region Assertions
+	static #assertStringPrimitive(primitive: KDL.Primitive | undefined): asserts primitive is string {
+		const type = typeof primitive;
+		if (type !== "string") {
+			throw new ParserError(
+				`Expected primitive of type string but got ${type}`,
+			);
 		}
 	}
-	private extract = (document: KDLNode[], str: QueryString) =>
-		new Map(
-			this.query(document, str)
-				.map((child) => {
-					assertStringValue(child.values[0]);
-					return [child.values[0], child];
-				}),
-		);
 
-	private walk = (node: KDLNode, options?: KDLNodeVisitorOptions): DuneNode[] =>
-		node.children.flatMap((child) => this.visit(child, node, options)).filter((node) => !!node);
-	private visit(
-		node: KDLNode,
-		parent: KDLNode,
-		options: KDLNodeVisitorOptions = {},
-	): DuneNode | DuneNode[] | undefined {
-		// Inject globals into passed context
-		options.ctx = { ...this.globals, ...options.ctx };
+	static #assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
+		if (obj == null || typeof obj[Symbol.iterator] !== "function") {
+			throw new ParserError("Expected an iterable");
+		}
+	}
 
-		// Build the AST
-		switch (node.name as ParseableKDLNodeTypes) {
-			// #region Flow
+	static #assertArgumentLength(node: KDL.Node, expected: number) {
+		const args = node.getArguments();
+		if (args.length !== expected) {
+			throw new ParserError(
+				`Incorrect number of values passed to node of type \"${node.getName()}\", expected ${expected} but got ${args.length}`,
+			);
+		}
+	}
+
+	static #isNodeExpectedType(node: KDL.Node | undefined, expected: string | RegExp) {
+		if (!node) return false;
+		const name = node.getName();
+
+		if (expected instanceof RegExp) {
+			return expected.test(name);
+		} else {
+			return name === expected;
+		}
+	}
+	static #assertParentNodeType(parent: KDL.Node, node: KDL.Node, expected: string | RegExp) {
+		if (!Parser.#isNodeExpectedType(parent, expected)) {
+			throw new ParserError(
+				`Invalid position for node of type \"${node.getName()}\", expected parent node to be of type \"${expected}\" but got \"${parent.getName()}\"`,
+			);
+		}
+	}
+	static #assertSiblingNodeType(
+		parent: KDL.Node,
+		node: KDL.Node,
+		direction: "previous" | "next",
+		expected: string | RegExp,
+	) {
+		const name = node.getName();
+		const offset = direction === "previous" ? -1 : 1;
+		const family = parent.children!.nodes;
+		const sibling: KDL.Node | undefined = family[family.indexOf(node) + offset];
+
+		if (!sibling) {
+			throw new ParserError(
+				`Invalid position for node of type \"${name}\", expected a sibling node ${direction} to it`,
+			);
+		} else if (!Parser.#isNodeExpectedType(sibling, expected)) {
+			throw new ParserError(
+				`Invalid position for node of type \"${name}\", expected sibling node ${direction} to it to be of type \"${expected}\" but got \"${sibling.getName()}\"`,
+			);
+		}
+	}
+	// #endregion
+
+	// "Named nodes" - components, insertions, etc
+	static #mapNamedNodes = (nodes: KDL.Node[]): KDLNodeMap =>
+		new Map(nodes.map((node) => {
+			Parser.#assertArgumentLength(node, 1);
+
+			const name = node.getArgument(0);
+			Parser.#assertStringPrimitive(name);
+
+			return [name, node];
+		}));
+
+	#walk(root: KDL.Node, options?: VisitOptions) {
+		if (!root.children) return []; // Handle both empty array or null children block
+		return root.children.nodes.flatMap((child) => this.#visit(root, child, options)).filter((node) => !!node);
+	}
+	#visit(parent: KDL.Node, node: KDL.Node, options: VisitOptions = {}): DuneNode | DuneNode[] | undefined {
+		options.env = { ...this.globals, ...options.env }; // Merge global and local env
+
+		switch (node.getName() as DuneDirective) {
+			// #region AST: Flow
 			case "else":
 			case "elif": {
-				assertPreviousNodeType(node, parent, /if|elif/);
+				Parser.#assertSiblingNodeType(parent, node, "previous", /if|elif/);
 				return;
 			}
 			case "if": {
-				const thisIdx = parent.children.indexOf(node);
-				const siblings = parent.children.slice(thisIdx);
+				const thisIdx = parent.children!.nodes.indexOf(node);
+				const nextSiblings = parent.children!.nodes.slice(thisIdx);
 
-				outer: for (const sibling of siblings) {
-					switch (sibling.name) {
+				outer: for (const sibling of nextSiblings) {
+					switch (sibling.getName()) {
 						case "elif":
 						case "if": {
-							assertValueSize(sibling, 1);
-							assertStringValue(sibling.values[0]);
+							Parser.#assertArgumentLength(sibling, 1);
 
-							const result = !!evaluate(sibling.values[0], options.ctx);
+							const condition = sibling.getArgument(0);
+							Parser.#assertStringPrimitive(condition);
+
+							const result = !!evaluate(condition, options.env);
 							if (!result) continue outer;
 						}
 						case "else": {
-							return this.walk(sibling, options);
+							return this.#walk(sibling, options);
 						}
 						default: {
 							break outer;
@@ -167,123 +189,133 @@ export class Parser {
 				return;
 			}
 			case "each": {
-				assertValueSize(node, 2);
-				assertStringValue(node.values[0]);
-				assertStringValue(node.values[1]);
+				Parser.#assertArgumentLength(node, 2);
 
-				const iterable = options.ctx[node.values[0]];
-				assertIsIterable(iterable);
+				const expr = node.getArgument(0);
+				Parser.#assertStringPrimitive(expr);
+
+				const iterable = evaluate(expr, options.env);
+				Parser.#assertIsIterable(iterable);
+
+				const variableName = node.getArgument(1);
+				Parser.#assertStringPrimitive(variableName);
 
 				const iterations = [];
 				for (const item of iterable) {
-					iterations.push(this.walk(node, {
+					iterations.push(this.#walk(node, {
 						...options,
-						ctx: { ...options.ctx, [node.values[1]]: item },
+						env: { ...options.env, [variableName]: item },
 					}));
 				}
 
 				return iterations.flat();
 			}
 
-			// #region Components
+			// #region AST: Components
 			case "insert": {
-				assertParentNodeType(node, parent, "use");
+				Parser.#assertParentNodeType(parent, node, "use");
 				return;
 			}
 			case "use": {
-				assertValueSize(node, 1);
-				assertStringValue(node.values[0]);
+				Parser.#assertArgumentLength(node, 1);
 
-				const name = node.values[0];
-				const callee = [this, ...this.dependencies.values()].find((p) => p.components.has(name));
-				if (!callee) throw new Error(`Unknown component \"${name}\"`);
+				const name = node.getArgument(0);
+				Parser.#assertStringPrimitive(name);
 
-				const component = callee.components.get(name)!;
+				const callee = [this, ...this.dependencies.values()].find((p) => p.#components.has(name));
+				if (!callee) throw new ParserError(`Unknown component \"${name}\"`);
 
-				return callee.walk(component, {
+				const component = callee.#components.get(name)!;
+
+				return callee.#walk(component, {
 					caller: this,
-					insertions: this.extract(node.children, "insert"),
-					ctx: remap(node.properties, options.ctx), // Component body is an isolated context
+					insertions: Parser.#mapNamedNodes(node.findNodesByName("insert")),
+					env: templateProperties(node.getProperties(), options.env), // Component body is an isolated environment
 				});
 			}
 			case "slot": {
-				assertValueSize(node, 1);
-				assertStringValue(node.values[0]);
+				Parser.#assertArgumentLength(node, 1);
 
-				const insertion = options.insertions?.get(node.values[0]);
+				const name = node.getArgument(0);
+				Parser.#assertStringPrimitive(name);
+
+				const insertion = options.insertions?.get(name);
 				if (!insertion) return;
 
-				return options.caller!.walk(insertion, options);
+				return options.caller!.#walk(insertion, options);
 			}
 
-			// #region Elements
+			// #region AST: Elements
 			case "text": {
-				assertValueSize(node, 1);
-				assertStringValue(node.values[0]);
+				Parser.#assertArgumentLength(node, 1);
+
+				const content = node.getArgument(0);
+				Parser.#assertStringPrimitive(content);
 
 				return {
 					type: "text",
-					content: template(node.values[0], options.ctx),
+					content: template(content, options.env),
 				};
 			}
 			case "element": {
-				assertValueSize(node, 1);
-				assertStringValue(node.values[0]);
+				Parser.#assertArgumentLength(node, 1);
 
-				const name = evaluate(node.values[0], options.ctx, true);
-				const attributes = remap(node.properties, options.ctx, true);
+				const expr = node.getArgument(0);
+				Parser.#assertStringPrimitive(expr);
+
+				const name = evaluate(expr, options.env, true);
+				const attributes = templateProperties(node.getProperties(), options.env, true);
 
 				return {
 					type: "element",
 					name,
 					attributes,
-					body: this.walk(node, options),
+					body: this.#walk(node, options),
 				};
 			}
 			default: {
-				const attributes = remap(node.properties, options.ctx, true);
+				const attributes = templateProperties(node.getProperties(), options.env, true);
 
 				return {
 					type: "element",
-					name: node.name,
+					name: node.getName(),
 					attributes,
 					body: [
-						...node.values.map((value) => {
-							assertStringValue(value);
+						...node.getArguments().map((v) => {
+							Parser.#assertStringPrimitive(v);
 							return {
 								type: "text" as const,
-								content: template(value, options.ctx!),
+								content: template(v, options.env!),
 							};
 						}),
-						...this.walk(node, options),
+						...this.#walk(node, options),
 					],
 				};
 			}
 		}
 	}
 
-	public toAST() {
-		if (!this.root) throw new Error("Cannot get an AST from a document with no page root");
-		return this.walk(this.root);
+	toAST() {
+		if (!this.#root) throw new ParserError("Cannot build an AST from a document with no \"page\" node");
+		return this.#walk(this.#root);
 	}
-
-	public convert = (adapter: Adapter) => adapter.process(this.toAST());
+	convert = (adapter: Adapter) => adapter.process(this.toAST());
 
 	static async for(url: URL): Promise<Parser> {
-		if (!url.pathname.endsWith(".kdl")) throw new Error("Expected a KDL (\".kdl\") file");
+		if (!url.pathname.endsWith(".kdl")) throw new ParserError("Expected a KDL (\".kdl\") file");
 
 		const content = await fetch(url, { cache: "no-cache" })
 			.then((r) => r.text())
 			.catch((e: Error) => {
-				throw new Error(`Failed to fetch KDL file at "${url}": ${e.message}`);
+				throw new ParserError(`Failed to fetch KDL file at "${url}": ${e.message}`);
 			});
 
-		let context: Context | undefined;
+		let env: Environment | undefined;
 		for (const ext of [".js", ".mjs", ".ts", ".mts"]) {
 			try {
-				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext + `?v=${Date.now()}`);
-				const companion = await importModule(companionUrl.href);
-				context = companion.default;
+				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
+				const companion = await importModule(`${companionUrl.href}?v=${Date.now()}`);
+				env = companion.default;
 				break;
 			} catch (e) {
 				if ((e as any).code === "ERR_MODULE_NOT_FOUND") continue;
@@ -291,19 +323,11 @@ export class Parser {
 			}
 		}
 
-		const depsParser = new Parser(content, context);
-		const dependencies = new Map(
-			await Promise.all(
-				depsParser.query(depsParser.document, "import").map(async (child) => {
-					assertStringValue(child.values[0]);
-					return [
-						child.values[0],
-						await Parser.for(new URL(child.values[0], url)),
-					] as const;
-				}),
-			),
-		);
+		const parser = new Parser(content, env);
+		for (const path of parser.imports) {
+			await Parser.for(new URL(path, url)).then((p) => parser.dependencies.set(path, p));
+		}
 
-		return new Parser(content, context, dependencies);
+		return parser;
 	}
 }
