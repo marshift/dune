@@ -4,18 +4,6 @@ import * as KDL from "@bgotink/kdl";
 import type { Adapter } from "./adapters/base.js";
 import { type Environment, evaluate, template, templateProperties } from "./expressions.js";
 
-// The parser should parse all of these, even if they're conditionally used
-type DuneDirective =
-	| "element"
-	| "text"
-	| "slot"
-	| "use"
-	| "insert"
-	| "each"
-	| "if"
-	| "elif"
-	| "else";
-
 interface DuneElementNode {
 	type: "element";
 	name: string;
@@ -29,6 +17,18 @@ interface DuneTextNode {
 }
 
 export type DuneNode = DuneElementNode | DuneTextNode;
+
+// The parser should parse all of these, even if they're conditionally used
+type ParseableKDLNodeName =
+	| "element"
+	| "text"
+	| "slot"
+	| "use"
+	| "insert"
+	| "each"
+	| "if"
+	| "elif"
+	| "else";
 
 type KDLNodeMap = Map<string, KDL.Node>;
 type DependencyMap = Map<string, Parser>;
@@ -81,8 +81,8 @@ export class Parser {
 		}
 	}
 
-	static #assertIsIterable<T>(obj: any): asserts obj is Iterable<T> {
-		if (obj == null || typeof obj[Symbol.iterator] !== "function") {
+	static #assertIsIterable<T>(iterable: any): asserts iterable is Iterable<T> {
+		if (iterable == null || typeof iterable[Symbol.iterator] !== "function") {
 			throw new ParserError("Expected an iterable");
 		}
 	}
@@ -154,7 +154,7 @@ export class Parser {
 	#visit(parent: KDL.Node, node: KDL.Node, options: VisitOptions = {}): DuneNode | DuneNode[] | undefined {
 		options.env = { ...this.globals, ...options.env }; // Merge global and local env
 
-		switch (node.getName() as DuneDirective) {
+		switch (node.getName() as ParseableKDLNodeName) {
 			// #region AST: Flow
 			case "else":
 			case "elif": {
@@ -174,7 +174,7 @@ export class Parser {
 							const condition = sibling.getArgument(0);
 							Parser.#assertStringPrimitive(condition);
 
-							const result = !!evaluate(condition, options.env);
+							const result = evaluate(condition, options.env);
 							if (!result) continue outer;
 						}
 						case "else": {
@@ -191,20 +191,20 @@ export class Parser {
 			case "each": {
 				Parser.#assertArgumentLength(node, 2);
 
-				const expr = node.getArgument(0);
-				Parser.#assertStringPrimitive(expr);
+				const expression = node.getArgument(0);
+				Parser.#assertStringPrimitive(expression);
 
-				const iterable = evaluate(expr, options.env);
+				const iterable = evaluate(expression, options.env);
 				Parser.#assertIsIterable(iterable);
 
-				const variableName = node.getArgument(1);
-				Parser.#assertStringPrimitive(variableName);
+				const variable = node.getArgument(1);
+				Parser.#assertStringPrimitive(variable);
 
 				const iterations = [];
 				for (const item of iterable) {
 					iterations.push(this.#walk(node, {
 						...options,
-						env: { ...options.env, [variableName]: item },
+						env: { ...options.env, [variable]: item },
 					}));
 				}
 
@@ -260,10 +260,10 @@ export class Parser {
 			case "element": {
 				Parser.#assertArgumentLength(node, 1);
 
-				const expr = node.getArgument(0);
-				Parser.#assertStringPrimitive(expr);
+				const expression = node.getArgument(0);
+				Parser.#assertStringPrimitive(expression);
 
-				const name = evaluate(expr, options.env, true);
+				const name = evaluate(expression, options.env, true);
 				const attributes = templateProperties(node.getProperties(), options.env, true);
 
 				return {
@@ -281,11 +281,11 @@ export class Parser {
 					name: node.getName(),
 					attributes,
 					body: [
-						...node.getArguments().map((v) => {
-							Parser.#assertStringPrimitive(v);
+						...node.getArguments().map((arg) => {
+							Parser.#assertStringPrimitive(arg);
 							return {
 								type: "text" as const,
-								content: template(v, options.env!),
+								content: template(arg, options.env!),
 							};
 						}),
 						...this.#walk(node, options),
