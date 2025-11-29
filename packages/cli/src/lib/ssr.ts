@@ -46,7 +46,7 @@ async function handleFile(
 			if (ext === ".kdl") {
 				content = await Parser.for(pathToFileURL(path)).then(onKDLDocument);
 				res.writeHead(200, {
-					"content-type": "text/html",
+					"content-type": "text/html; charset=utf-8",
 				});
 			} else {
 				content = await readFile(path); // No encoding, we just want the bytes
