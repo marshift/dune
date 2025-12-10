@@ -33,11 +33,11 @@
 	},
 	"dependencies": {
 		"@marshift/argus": "^1.2.2",
-		"chokidar": "^4.0.3",
+		"chokidar": "^5.0.0",
 		"defu": "^6.1.4",
 		"mime": "^4.1.0"
 	},
 	"devDependencies": {
-		"tsup": "^8.5.0"
+		"tsup": "^8.5.1"
 	}
 }
