@@ -26,7 +26,7 @@
 		"dune": "./dist/cli.js"
 	},
 	"scripts": {
-		"prepublish": "tsup"
+		"prepublish": "tsdown"
 	},
 	"peerDependencies": {
 		"@dunejs/core": "workspace:1.x"
@@ -38,6 +38,6 @@
 		"mime": "^4.1.0"
 	},
 	"devDependencies": {
-		"tsup": "^8.5.1"
+		"tsdown": "^0.22.1"
 	}
 }

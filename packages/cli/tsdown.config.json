@@ -1,0 +1,5 @@
+{
+	"entry": ["./src/cli.ts", "./src/index.ts"],
+	"dts": "./src/index.ts",
+	"outputOptions": { "entryFileNames": "[name].js" }
+}
