@@ -3,7 +3,7 @@
 	"author": "marshift & contributors",
 	"license": "BSD-3-Clause",
 	"devDependencies": {
-		"@types/node": "^25.0.0",
-		"typescript": "^5.9.3"
+		"@types/node": "^25.9.1",
+		"typescript": "^6.0.3"
 	}
 }
