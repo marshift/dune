@@ -2,7 +2,7 @@ import type { Command } from "./base";
 import { BuildCommand } from "./build";
 import { ServeCommand } from "./serve";
 
-export const commands: Array<Command> = [
+export const commands: Command[] = [
 	new BuildCommand(),
 	new ServeCommand(),
 ];
