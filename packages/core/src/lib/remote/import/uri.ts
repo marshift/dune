@@ -29,7 +29,7 @@ async function importModule(url: string) {
 		})
 	);
 
-	const uri = `data:text/javascript;base64,${btoa(code)}`;
+	const uri = `data:text/javascript;base64,${btoa(code)}#${Date.now()}`;
 	return import(uri);
 }
 

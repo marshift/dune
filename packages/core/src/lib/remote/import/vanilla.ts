@@ -1,8 +1,8 @@
 import { assertProtocol } from "../shared.js";
 
-async function importModule(url: string) {
+function importModule(url: string) {
 	assertProtocol(url);
-	return await import(url);
+	return import(`${url}?v=${Date.now()}`);
 }
 
 export default importModule;

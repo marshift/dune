@@ -321,7 +321,7 @@ export class Parser {
 		for (const ext of [".js", ".mjs", ".ts", ".mts"]) {
 			try {
 				const companionUrl = new URL(url.href.substring(0, url.href.length - ".kdl".length) + ext);
-				const companion = await importModule(`${companionUrl.href}?v=${Date.now()}`);
+				const companion = await importModule(companionUrl.href);
 				env = companion.default;
 				break;
 			} catch (e) {
