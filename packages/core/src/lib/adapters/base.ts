@@ -1,5 +1,5 @@
-import type { DuneNode } from "../parser.js";
+import type { DuneAST } from "../parser.js";
 
 export abstract class Adapter {
-	abstract process(ast: DuneNode[]): string;
+	abstract process(ast: DuneAST): string;
 }

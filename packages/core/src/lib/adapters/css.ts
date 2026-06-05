@@ -1,4 +1,4 @@
-import type { DuneNode } from "../parser.js";
+import type { DuneAST, DuneNode } from "../parser.js";
 import { Adapter } from "./base.js";
 
 export class CSSAdapter extends Adapter {
@@ -23,5 +23,8 @@ export class CSSAdapter extends Adapter {
 		}
 	}
 
-	override process = (ast: DuneNode[]) => CSSAdapter.#walk(ast);
+	override process(ast: DuneAST) {
+		if (!ast.style) throw new Error("CSSAdapter can only process an AST with a \"style\"");
+		return CSSAdapter.#walk(ast.style);
+	}
 }

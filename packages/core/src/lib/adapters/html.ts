@@ -1,5 +1,6 @@
-import type { DuneNode } from "../parser.js";
+import type { DuneAST, DuneNode } from "../parser.js";
 import { Adapter } from "./base.js";
+import { CSSAdapter } from "./css.js";
 
 export class HTMLAdapter extends Adapter {
 	static readonly #DOCTYPE = "<!DOCTYPE html>";
@@ -28,10 +29,10 @@ export class HTMLAdapter extends Adapter {
 		"\"": "&quot;",
 		"'": "&#x27;",
 	};
-	static readonly #escapeRegexp = new RegExp(`[${Object.keys(this.#ESCAPE_MAP).join("")}]`, "g");
+	static readonly #ESCAPE_REGEX = new RegExp(`[${Object.keys(this.#ESCAPE_MAP).join("")}]`, "g");
 
-	static #element(type: string, attributes: Record<string, string>, children: string[]) {
-		let final = `<${type}`;
+	static #element(name: string, attributes: Record<string, string>, children: string[]) {
+		let final = `<${name}`;
 
 		const attributeEntries = Object.entries(attributes);
 		if (attributeEntries.length !== 0) {
@@ -42,7 +43,7 @@ export class HTMLAdapter extends Adapter {
 
 		final += `>${children.join("")}`;
 
-		if (!this.#VOID_ELEMENTS.has(type)) final += `</${type}>`;
+		if (!this.#VOID_ELEMENTS.has(name)) final += `</${name}>`;
 		return final;
 	}
 
@@ -52,7 +53,7 @@ export class HTMLAdapter extends Adapter {
 			case "text": {
 				return parent?.type === "element" && this.#ESCAPE_ELEMENT_BLACKLIST.has(parent.name)
 					? node.content
-					: node.content.replace(this.#escapeRegexp, (char) => this.#ESCAPE_MAP[char]);
+					: node.content.replace(this.#ESCAPE_REGEX, (char) => this.#ESCAPE_MAP[char]);
 			}
 			case "element": {
 				return this.#element(node.name, node.attributes, this.#walk(node.body, node));
@@ -60,6 +61,29 @@ export class HTMLAdapter extends Adapter {
 		}
 	}
 
-	override process = (ast: DuneNode[]) =>
-		HTMLAdapter.#DOCTYPE + HTMLAdapter.#element("html", {}, HTMLAdapter.#walk(ast));
+	static addHeadElement(ast: DuneAST, node: DuneNode) {
+		if (!ast.page) throw new Error("Cannot add an element to the head of an AST with no \"page\"");
+
+		const head = ast.page
+			.filter((node) => node.type === "element")
+			.find((node) => node.name === "head");
+
+		if (head) head.body.unshift(node);
+		else ast.page.unshift({ type: "element", name: "head", attributes: {}, body: [node] });
+	}
+
+	override process(ast: DuneAST) {
+		if (!ast.page) throw new Error("HTMLAdapter can only process an AST with a \"page\"");
+
+		if (ast.style) {
+			HTMLAdapter.addHeadElement(ast, {
+				type: "element",
+				name: "style",
+				attributes: {},
+				body: [{ type: "text", content: new CSSAdapter().process(ast) }],
+			});
+		}
+
+		return HTMLAdapter.#DOCTYPE + HTMLAdapter.#element("html", {}, HTMLAdapter.#walk(ast.page));
+	}
 }

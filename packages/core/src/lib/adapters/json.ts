@@ -1,4 +1,4 @@
-import type { DuneNode } from "../parser.js";
+import type { DuneAST } from "../parser.js";
 import { Adapter } from "./base.js";
 
 export class JSONAdapter extends Adapter {
@@ -9,5 +9,5 @@ export class JSONAdapter extends Adapter {
 		this.#pretty = pretty;
 	}
 
-	override process = (ast: DuneNode[]) => JSON.stringify(ast, null, this.#pretty ? 4 : 0);
+	override process = (ast: DuneAST) => JSON.stringify(ast, null, this.#pretty ? 4 : 0);
 }

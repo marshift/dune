@@ -18,6 +18,11 @@ interface DuneTextNode {
 
 export type DuneNode = DuneElementNode | DuneTextNode;
 
+export interface DuneAST {
+	style?: DuneNode[];
+	page?: DuneNode[];
+}
+
 // The parser should parse all of these, even if they're conditionally used
 type ParseableKDLNodeName =
 	| "element"
@@ -47,7 +52,8 @@ export class ParserError extends Error {}
 
 export class Parser {
 	readonly #document: KDL.Document;
-	readonly #root?: KDL.Node;
+	readonly #style?: KDL.Node;
+	readonly #page?: KDL.Node;
 	readonly #components: KDLNodeMap;
 
 	readonly imports: string[];
@@ -56,7 +62,8 @@ export class Parser {
 
 	constructor(input: string | ArrayBuffer, globals: Environment = {}, dependencies: DependencyMap = new Map()) {
 		this.#document = KDL.parse(input);
-		this.#root = this.#document.findNodeByName("page");
+		this.#style = this.#document.findNodeByName("style");
+		this.#page = this.#document.findNodeByName("page");
 		this.#components = Parser.#mapNamedNodes(this.#document.findNodesByName("component"));
 
 		this.imports = this.#document.findNodesByName("import").map((node) => {
@@ -295,10 +302,10 @@ export class Parser {
 		}
 	}
 
-	toAST() {
-		if (!this.#root) throw new ParserError("Cannot build an AST from a document with no \"page\" node");
-		return this.#walk(this.#root);
-	}
+	toAST = (): DuneAST => ({
+		...(this.#style && { style: this.#walk(this.#style) }),
+		...(this.#page && { page: this.#walk(this.#page) }),
+	});
 	convert = (adapter: Adapter) => adapter.process(this.toAST());
 
 	static async for(url: URL): Promise<Parser> {

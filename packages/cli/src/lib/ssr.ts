@@ -26,25 +26,19 @@ page {
 }
 `;
 
-	static readonly #HOT_RELOAD_NODES = new Parser(`
-page {
-	head {
-		script #"""
-		let source = null;
+	static readonly #HOT_RELOAD_SCRIPT = `
+let source = null;
 
-		window.addEventListener("pageshow", () => {
-			source = new EventSource("/_hot");
-			source.onmessage = () => document.location.reload();
-		});
+window.addEventListener("pageshow", () => {
+	source = new EventSource("/_hot");
+	source.onmessage = () => document.location.reload();
+});
 
-		window.addEventListener("pagehide", () => {
-			source?.close();
-			source = null;
-		});
-		"""#
-	}
-}
-`).toAST();
+window.addEventListener("pagehide", () => {
+	source?.close();
+	source = null;
+});
+`;
 
 	#options: ServerOptions;
 	#server: Server;
@@ -116,13 +110,13 @@ page {
 		const ast = parser.toAST();
 
 		if (this.#options.dev) {
-			const head = ast
-				.filter((node) => node.type === "element")
-				.find((node) => node.name === "head");
-
-			(!head ? ast : head.body).unshift(...SSRServer.#HOT_RELOAD_NODES);
+			HTMLAdapter.addHeadElement(ast, {
+				type: "element",
+				name: "script",
+				attributes: {},
+				body: [{ type: "text", content: SSRServer.#HOT_RELOAD_SCRIPT }],
+			});
 		}
-
 		const content = new HTMLAdapter().process(ast);
 		this.#respond(res, new Response(content, { status, headers: { "content-type": "text/html" } }));
 	}

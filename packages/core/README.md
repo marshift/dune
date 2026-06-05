@@ -34,12 +34,12 @@ const content = parser.convert(new HTMLAdapter());
 
 ### writing a custom adapter
 ```js
-import { Adapter, Parser } from "@dunejs/core";
+import { Adapter, type DuneAST, Parser } from "@dunejs/core";
 
 // I'm really not sure why you'd need this. It's an example!
 // Theoretically, you could write an adapter for just about anything.
 class ReverseAdapter extends Adapter {
-	override process = (ast: DuneNode[]) => JSON.stringify(ast.toReversed());
+	override process = (ast: DuneAST) => JSON.stringify(ast.toReversed());
 }
 
 const parser = await Parser.for(new URL("https://example.com/page.kdl"));
