@@ -1,0 +1,27 @@
+component "color-loop" {
+	each "colors" "color" {
+		slot "content"
+	}
+}
+
+style {
+	use "color-loop" {
+		insert "content" {
+			element "\".\" + color" {
+				color "${color}"
+			}
+		}
+	}
+}
+
+page {
+	use "color-loop" {
+		insert "content" {
+			p {
+				text "i'm "
+				span class="${color}" "${color}"
+				text "!"
+			}
+		}
+	}
+}

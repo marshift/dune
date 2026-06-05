@@ -1,0 +1,10 @@
+page {
+	body {
+		p {
+			text "This page has an image served from the "
+			code "public/"
+			text " folder."
+		}
+		img width=512 src="dunes.png"
+	}
+}

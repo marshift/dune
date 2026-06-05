@@ -71,6 +71,29 @@ component "content" {
 	}
 }
 
+// `style <body>` provides styling for the page or its components
+// this is typically processed by a seperate adapter, but supports the same syntax sugars as everywhere else
+style {
+	// elements containing other elements are treated as blocks
+	body {
+		// elements containing only text are treated as declarations
+		font-family "sans-serif"
+		background-color "#202020"
+		color "#eee"
+
+		// nested rulesets are supported
+		a {
+			color "#aec6cf"
+			&:visited {
+				color "#cfaec6"
+			}
+			&:hover {
+				opacity "0.75"
+			}
+		}
+	}
+}
+
 // `page <body>` is the entrypoint of the page, not required if a file only provides components
 page {
 	body {
