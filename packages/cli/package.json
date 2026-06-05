@@ -1,6 +1,6 @@
 {
 	"name": "@dunejs/cli",
-	"version": "1.1.0",
+	"version": "2.0.0",
 	"description": "command line interface for dune, a static site generator and templating engine",
 	"repository": {
 		"url": "https://github.com/marshift/dune",
@@ -29,10 +29,10 @@
 		"prepublish": "tsdown"
 	},
 	"peerDependencies": {
-		"@dunejs/core": "workspace:1.x"
+		"@dunejs/core": "workspace:2.x"
 	},
 	"dependencies": {
-		"@dunejs/core": "workspace:1.x",
+		"@dunejs/core": "workspace:2.x",
 		"@marshift/argus": "^1.2.2",
 		"chokidar": "^5.0.0",
 		"defu": "^6.1.7",

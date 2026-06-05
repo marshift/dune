@@ -18,7 +18,7 @@ importers:
   packages/cli:
     dependencies:
       '@dunejs/core':
-        specifier: workspace:1.x
+        specifier: workspace:2.x
         version: link:../core
       '@marshift/argus':
         specifier: ^1.2.2
