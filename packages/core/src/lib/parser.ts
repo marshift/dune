@@ -19,8 +19,8 @@ interface DuneTextNode {
 export type DuneNode = DuneElementNode | DuneTextNode;
 
 export interface DuneAST {
-	style?: DuneNode[];
-	page?: DuneNode[];
+	style: DuneNode[];
+	page: DuneNode[];
 }
 
 // The parser should parse all of these, even if they're conditionally used
@@ -302,9 +302,15 @@ export class Parser {
 		}
 	}
 
+	#mergeStyleNodes(style: DuneNode[] = []) {
+		if (this.#style) style.unshift(...this.#walk(this.#style));
+		for (const dependency of this.dependencies.values()) dependency.#mergeStyleNodes(style);
+		return style;
+	}
+
 	toAST = (): DuneAST => ({
-		...(this.#style && { style: this.#walk(this.#style) }),
-		...(this.#page && { page: this.#walk(this.#page) }),
+		style: this.#mergeStyleNodes(),
+		page: this.#page ? this.#walk(this.#page) : [],
 	});
 	convert = (adapter: Adapter) => adapter.process(this.toAST());
 
