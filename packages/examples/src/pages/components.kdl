@@ -1,4 +1,5 @@
 import "../components/say.kdl" // Provides "say"
+import "../components/upside-down.kdl" // Provides "upside-down", a styled component
 
 component "nesting-demo" {
 	use "say" word="nested"
@@ -13,6 +14,7 @@ component "slot-demo" {
 page {
 	body {
 		use "say" word="woah"
+		use "upside-down"
 		use "nesting-demo"
 		use "slot-demo" {
 			insert "content" {

@@ -1,0 +1,9 @@
+style {
+	.upside-down {
+        transform "rotateX(180deg)"
+	}
+}
+
+component "upside-down" {
+	p class="upside-down" "I'm upside down!"
+}
