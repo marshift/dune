@@ -75,7 +75,7 @@ export class HTMLAdapter extends Adapter {
 	override process(ast: DuneAST) {
 		if (!ast.page) throw new Error("HTMLAdapter can only process an AST with a \"page\"");
 
-		if (ast.style) {
+		if (ast.style.length !== 0) {
 			HTMLAdapter.addHeadElement(ast, {
 				type: "element",
 				name: "style",
